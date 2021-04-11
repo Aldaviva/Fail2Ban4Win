@@ -1,0 +1,175 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using WindowsFirewallHelper;
+using WindowsFirewallHelper.Addresses;
+using WindowsFirewallHelper.Collections;
+using WindowsFirewallHelper.FirewallRules;
+using Fail2Ban4Win.Config;
+using Fail2Ban4Win.Facades;
+using Fail2Ban4Win.Services;
+using FakeItEasy;
+using NLog;
+using Tests.Logging;
+using Xunit;
+using Xunit.Abstractions;
+
+#nullable enable
+
+namespace Tests.Services {
+
+    public class BanManagerTest: IDisposable {
+
+        private static readonly IPAddress SOURCE_ADDRESS = IPAddress.Parse("192.0.2.0");
+
+        private const int MAX_ALLOWED_FAILURES = 2;
+
+        private readonly BanManagerImpl   banManager;
+        private readonly EventLogListener eventLogListener = A.Fake<EventLogListener>();
+
+        private readonly Configuration configuration = new() {
+            isDryRun           = false,
+            failureWindow      = TimeSpan.FromMilliseconds(50),
+            banPeriod          = TimeSpan.FromMilliseconds(200),
+            banSubnetBits      = 8,
+            logLevel           = LogLevel.Trace,
+            maxAllowedFailures = MAX_ALLOWED_FAILURES,
+            neverBanSubnets    = new[] { IPNetwork.Parse("73.202.12.148/32") }
+        };
+
+        private readonly IFirewallWASRulesCollection<FirewallWASRule> firewallRules  = new FakeFirewallRulesCollection();
+        private readonly FirewallFacade                               firewallFacade = A.Fake<FirewallFacade>();
+
+        public BanManagerTest(ITestOutputHelper testOutput) {
+            XunitTestOutputTarget.start(testOutput);
+
+            A.CallTo(() => firewallFacade.Rules).Returns(firewallRules);
+            banManager = new BanManagerImpl(eventLogListener, configuration, firewallFacade);
+        }
+
+        [Fact]
+        public void dontBanAfterInsufficientFailures() {
+            for (int i = 0; i < MAX_ALLOWED_FAILURES; i++) {
+                eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            }
+
+            Assert.Empty(firewallRules);
+        }
+
+        [Fact]
+        public void dontBanReservedAddress() {
+            IPAddress reservedAddress = IPAddress.Parse("192.168.1.1");
+            for (int i = 0; i < MAX_ALLOWED_FAILURES; i++) {
+                eventLogListener.failure += Raise.With(null, reservedAddress);
+            }
+
+            Assert.Empty(firewallRules);
+        }
+
+        [Fact]
+        public void dontBanLoopbackAddress() {
+            IPAddress reservedAddress = IPAddress.Parse("127.0.0.1");
+            for (int i = 0; i < MAX_ALLOWED_FAILURES; i++) {
+                eventLogListener.failure += Raise.With(null, reservedAddress);
+            }
+
+            Assert.Empty(firewallRules);
+        }
+
+        [Fact]
+        public void dontBanWhitelistedAddress() {
+            IPAddress reservedAddress = IPAddress.Parse("73.202.12.148");
+            for (int i = 0; i < MAX_ALLOWED_FAILURES; i++) {
+                eventLogListener.failure += Raise.With(null, reservedAddress);
+            }
+
+            Assert.Empty(firewallRules);
+        }
+
+        [Fact]
+        public void bansAfterEnoughFailures() {
+            for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+                eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            }
+
+            Assert.NotEmpty(firewallRules);
+            FirewallWASRule actual = firewallRules.First();
+            Assert.True(actual.IsEnable);
+            Assert.Equal("Banned 192.0.2.0/24", actual.Name);
+            Assert.Equal("Fail2Ban4Win", actual.Grouping);
+            Assert.Equal(FirewallAction.Block, actual.Action);
+            Assert.Equal(FirewallDirection.Inbound, actual.Direction);
+            Assert.Equal(NetworkAddress.Parse("192.0.2.0/24"), actual.RemoteAddresses[0]);
+        }
+
+        [Fact]
+        public void dontBanInDryRunMode() {
+            banManager.Dispose();
+
+            configuration.isDryRun = true;
+
+            var manager = new BanManagerImpl(eventLogListener, configuration, firewallFacade);
+
+            for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+                eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            }
+
+            Assert.Empty(firewallRules);
+
+            manager.Dispose();
+        }
+
+        [Fact]
+        public void deleteExistingRulesOnStartup() {
+            banManager.Dispose();
+
+            firewallRules.Add(new FirewallWASRule("deleteme1", FirewallAction.Block, FirewallDirection.Inbound, FirewallProfiles.Public) { Grouping = "Fail2Ban4Win" });
+            firewallRules.Add(new FirewallWASRule("deleteme2", FirewallAction.Block, FirewallDirection.Inbound, FirewallProfiles.Public) { Grouping = "Fail2Ban4Win" });
+
+            Assert.NotEmpty(firewallRules);
+
+            var manager = new BanManagerImpl(eventLogListener, configuration, firewallFacade);
+
+            Assert.Empty(firewallRules);
+
+            manager.Dispose();
+        }
+
+        [Fact]
+        public async Task unbanAfterBanExpired() {
+            for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+                eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            }
+
+            Assert.NotEmpty(firewallRules);
+
+            await Task.Delay((int) configuration.banPeriod.TotalMilliseconds * 2);
+
+            Assert.Empty(firewallRules);
+        }
+
+        private class FakeFirewallRulesCollection: List<FirewallWASRule>, IFirewallWASRulesCollection<FirewallWASRule> {
+
+            public FirewallWASRule? this[string name] => this.FirstOrDefault(rule => rule.Name == name);
+
+            public bool Remove(string name) {
+                if (this[name] is { } ruleToRemove) {
+                    Remove(ruleToRemove);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+        }
+
+        public void Dispose() {
+            banManager.Dispose();
+            eventLogListener.Dispose();
+        }
+
+    }
+
+}

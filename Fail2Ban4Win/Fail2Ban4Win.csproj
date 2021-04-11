@@ -53,7 +53,7 @@
     <ApplicationIcon>pifmgr_37.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Fail2Ban4Win.Config.Test</StartupObject>
+    <StartupObject>Fail2Ban4Win.Entry.MainClass</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -61,18 +61,21 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config\Configuration.cs" />
-    <Compile Include="Config\IPNetworkConverter.cs" />
-    <Compile Include="Config\RegexConverter.cs" />
+    <Compile Include="Config\IPNetworkDeserializer.cs" />
+    <Compile Include="Config\RegexDeserializer.cs" />
+    <Compile Include="Facades\EventLogWatcherFacade.cs" />
+    <Compile Include="Facades\FirewallFacade.cs" />
     <Compile Include="Injection\ConfigurationModule.cs" />
+    <Compile Include="Injection\FacadeModules.cs" />
+    <Compile Include="Injection\LoggingModule.cs" />
     <Compile Include="Injection\ServiceModules.cs" />
+    <Compile Include="Data\ArrayListSubnetFailureHistory.cs" />
     <Compile Include="Services\BanManager.cs" />
     <Compile Include="Services\EventLogListener.cs" />
     <Compile Include="Entry\WindowsService.cs">
@@ -81,8 +84,9 @@
     <Compile Include="Entry\WindowsService.Designer.cs">
       <DependentUpon>WindowsService.cs</DependentUpon>
     </Compile>
-    <Compile Include="Entry\Program.cs" />
+    <Compile Include="Entry\MainClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Data\SubnetFailureHistory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -118,6 +122,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json">
       <Version>5.0.0</Version>
     </PackageReference>
+    <PackageReference Include="NLog">
+      <Version>4.7.9</Version>
+    </PackageReference>
     <PackageReference Include="WindowsFirewallHelper">
       <Version>2.0.4.70-beta2</Version>
     </PackageReference>
@@ -134,5 +141,6 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

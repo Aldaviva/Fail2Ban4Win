@@ -1,4 +1,6 @@
 ﻿
+using System.Diagnostics.CodeAnalysis;
+
 namespace Fail2Ban4Win.Entry
 {
     partial class WindowsService
