@@ -26,23 +26,27 @@ namespace Tests.Services {
 
         private const int MAX_ALLOWED_FAILURES = 2;
 
-        private readonly BanManagerImpl   banManager;
-        private readonly EventLogListener eventLogListener = A.Fake<EventLogListener>();
+        private readonly BanManagerImpl    banManager;
+        private readonly EventLogListener  eventLogListener = A.Fake<EventLogListener>();
+        private readonly ITestOutputHelper testOutput;
 
         private readonly Configuration configuration = new() {
-            isDryRun           = false,
-            failureWindow      = TimeSpan.FromMilliseconds(50),
-            banPeriod          = TimeSpan.FromMilliseconds(200),
-            banSubnetBits      = 8,
-            logLevel           = LogLevel.Trace,
-            maxAllowedFailures = MAX_ALLOWED_FAILURES,
-            neverBanSubnets    = new[] { IPNetwork.Parse("73.202.12.148/32") }
+            isDryRun                      = false,
+            failureWindow                 = TimeSpan.FromMilliseconds(50),
+            banPeriod                     = TimeSpan.FromMilliseconds(200),
+            banSubnetBits                 = 8,
+            banRepeatedOffenseCoefficient = 1,
+            banRepeatedOffenseMax         = 4,
+            logLevel                      = LogLevel.Trace,
+            maxAllowedFailures            = MAX_ALLOWED_FAILURES,
+            neverBanSubnets               = new[] { IPNetwork.Parse("73.202.12.148/32") }
         };
 
         private readonly IFirewallWASRulesCollection<FirewallWASRule> firewallRules  = new FakeFirewallRulesCollection();
         private readonly FirewallFacade                               firewallFacade = A.Fake<FirewallFacade>();
 
         public BanManagerTest(ITestOutputHelper testOutput) {
+            this.testOutput = testOutput;
             XunitTestOutputTarget.start(testOutput);
 
             A.CallTo(() => firewallFacade.Rules).Returns(firewallRules);
@@ -139,16 +143,37 @@ namespace Tests.Services {
 
         [Fact]
         public async Task unbanAfterBanExpired() {
+            IPAddress sourceAddress = IPAddress.Parse("198.51.100.1");
             for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-                eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+                eventLogListener.failure += Raise.With(null, sourceAddress);
             }
 
             Assert.NotEmpty(firewallRules);
 
             await Task.Delay((int) configuration.banPeriod.TotalMilliseconds * 2);
 
+            testOutput.WriteLine("banPeriod = {0}", configuration.banPeriod);
             Assert.Empty(firewallRules);
         }
+
+        [Theory]
+        [MemberData(nameof(BAN_DURATION_DATA))]
+        public void banDuration(int offense, TimeSpan expectedDuration) {
+            configuration.banPeriod = TimeSpan.FromMinutes(1);
+
+            TimeSpan actual = banManager.getUnbanDuration(offense);
+
+            Assert.Equal(expectedDuration, actual);
+        }
+
+        public static readonly IEnumerable<object[]> BAN_DURATION_DATA = new[] {
+            new object[] { 1, TimeSpan.FromMinutes(1) },
+            new object[] { 2, TimeSpan.FromMinutes(2) },
+            new object[] { 3, TimeSpan.FromMinutes(3) },
+            new object[] { 4, TimeSpan.FromMinutes(4) },
+            new object[] { 5, TimeSpan.FromMinutes(4) },
+            new object[] { 6, TimeSpan.FromMinutes(4) }
+        };
 
         private class FakeFirewallRulesCollection: List<FirewallWASRule>, IFirewallWASRulesCollection<FirewallWASRule> {
 

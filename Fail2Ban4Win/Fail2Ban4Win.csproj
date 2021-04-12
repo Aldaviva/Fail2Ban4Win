@@ -69,6 +69,7 @@
     <Compile Include="Config\Configuration.cs" />
     <Compile Include="Config\IPNetworkDeserializer.cs" />
     <Compile Include="Config\RegexDeserializer.cs" />
+    <Compile Include="Data\EnumerableExtensions.cs" />
     <Compile Include="Facades\EventLogWatcherFacade.cs" />
     <Compile Include="Facades\FirewallFacade.cs" />
     <Compile Include="Injection\ConfigurationModule.cs" />
@@ -92,7 +93,10 @@
     <None Include="App.config" />
     <None Include="app.manifest" />
     <None Include="configuration.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Install service.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -104,9 +108,6 @@
     <Content Include="pifmgr_37.ico" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FluentScheduler">
-      <Version>5.5.1</Version>
-    </PackageReference>
     <PackageReference Include="ILRepack.Lib.MSBuild.Task">
       <Version>2.0.18.2</Version>
     </PackageReference>

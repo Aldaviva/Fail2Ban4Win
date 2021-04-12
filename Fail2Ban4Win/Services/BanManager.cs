@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using WindowsFirewallHelper;
 using WindowsFirewallHelper.Addresses;
 using WindowsFirewallHelper.FirewallRules;
@@ -11,7 +13,6 @@ using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
 using Fail2Ban4Win.Injection;
-using FluentScheduler;
 using NLog;
 
 #nullable enable
@@ -33,14 +34,13 @@ namespace Fail2Ban4Win.Services {
         private readonly Configuration    configuration;
         private readonly FirewallFacade   firewall;
 
-        private readonly ConcurrentDictionary<IPNetwork, SubnetFailureHistory> failures = new();
+        private readonly ConcurrentDictionary<IPNetwork, SubnetFailureHistory> failures                = new();
+        private readonly CancellationTokenSource                               cancellationTokenSource = new();
 
         public BanManagerImpl(EventLogListener eventLogListener, Configuration configuration, FirewallFacade firewall) {
             this.eventLogListener = eventLogListener;
             this.configuration    = configuration;
             this.firewall         = firewall;
-
-            JobManager.Initialize(new Registry());
 
             IEnumerable<FirewallWASRule> oldRules = firewall.Rules.Where(isBanRule()).ToList();
             if (oldRules.Any()) {
@@ -104,11 +104,11 @@ namespace Fail2Ban4Win.Services {
         private void ban(IPNetwork subnet, SubnetFailureHistory clientFailureHistory) {
             clientFailureHistory.banCount++;
 
-            DateTime now       = DateTime.Now;
-            DateTime unbanTime = now + TimeSpan.FromMilliseconds(Math.Min(clientFailureHistory.banCount, 4) * configuration.banPeriod.TotalMilliseconds);
+            DateTime now           = DateTime.Now;
+            TimeSpan unbanDuration = getUnbanDuration(clientFailureHistory.banCount);
 
             var rule = new FirewallWASRuleWin7(getRuleName(subnet), FirewallAction.Block, FirewallDirection.Inbound, ALL_PROFILES) {
-                Description     = $"Created on {now:F}, to be deleted on {unbanTime:F} (offense #{clientFailureHistory.banCount:N0}).",
+                Description     = $"Banned {now:s}. Will unban {now + unbanDuration:s}. Offense #{clientFailureHistory.banCount:N0}.",
                 Grouping        = GROUP_NAME,
                 RemoteAddresses = new IAddress[] { new NetworkAddress(subnet.Network, subnet.Netmask) }
             };
@@ -117,15 +117,30 @@ namespace Fail2Ban4Win.Services {
                 firewall.Rules.Add(rule);
             }
 
-            JobManager.AddJob(() => unban(subnet), schedule => schedule.ToRunOnceAt(unbanTime));
+            Task.Delay(unbanDuration, cancellationTokenSource.Token)
+                .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.LongRunning | TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current);
 
-            LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:F} (in {2:g}).", subnet, unbanTime, configuration.banPeriod);
+            LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:F} (in {2:g}).", subnet, unbanDuration, configuration.banPeriod);
 
             LOGGER.Trace("Clearing internal history of failures for {0} now that a firewall rule has been created.", subnet);
 
             if (!configuration.isDryRun) {
                 clientFailureHistory.clear();
             }
+        }
+
+        /// <summary>For first offenses, this returns <c>banPeriod</c> (from <c>configuration.json</c>). For repeated offenses, the ban period is increased by <c>banRepeatedOffenseCoefficient</c> each time. The ban period stops increasing after <c>banRepeatedOffenseMax</c> offenses. <list type="bullet">sfsdf</list></summary>
+        /// <remarks>
+        ///     <para>Example using <c>banPeriod</c> = 1 day, <c>banRepeatedOffenseCoefficient</c> = 1, and <c>banRepeatedOffenseMax</c> = 4:</para>
+        ///     <list type="table"><listheader><term>Offense</term> <description>Ban duration</description></listheader> <item><term>1st</term> <description>1 day</description></item> <item><term>2nd</term> <description>2 days</description></item> <item><term>3rd</term> <description>3 days</description></item> <item><term>4th</term> <description>4 days</description></item> <item><term>5th</term> <description>4 days</description></item> <item><term>6th</term> <description>4 days</description></item></list></remarks>
+        /// <param name="banCount">How many times the subnet in question has been banned, including this time. Starts at <c>1</c> for a new subnet that is being banned for the first time.</param>
+        /// <returns>How long the offending subnet should be banned.</returns>
+        public TimeSpan getUnbanDuration(int banCount) {
+            banCount = Math.Max(1, banCount);
+            return configuration.banPeriod + TimeSpan.FromMilliseconds(
+                (Math.Min(banCount, configuration.banRepeatedOffenseMax ?? 4) - 1) *
+                (configuration.banRepeatedOffenseCoefficient ?? 1) *
+                configuration.banPeriod.TotalMilliseconds);
         }
 
         private void unban(IPNetwork subnet) {
@@ -147,8 +162,7 @@ namespace Fail2Ban4Win.Services {
 
         public void Dispose() {
             eventLogListener.failure -= onFailure;
-            JobManager.Stop();
-            JobManager.RemoveAllJobs();
+            cancellationTokenSource.Cancel();
         }
 
     }

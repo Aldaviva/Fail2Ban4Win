@@ -45,17 +45,19 @@ namespace Tests.Services {
         private readonly EventLogListener listener;
 
         private readonly IList<EventLogWatcherFacade> watcherFacades = new List<EventLogWatcherFacade>();
-        private readonly IList<EventLogQueryFacade>   query          = new List<EventLogQueryFacade>();
+        private readonly IList<EventLogQueryFacade>   queries        = new List<EventLogQueryFacade>();
 
         public EventLogListenerTest(ITestOutputHelper testOutputHelper) {
             XunitTestOutputTarget.start(testOutputHelper);
 
-            listener = new EventLogListenerImpl(configuration, eventQuery => {
-                query.Add(eventQuery);
-                var watcherFacade = A.Fake<EventLogWatcherFacade>();
-                watcherFacades.Add(watcherFacade);
-                return watcherFacade;
-            });
+            listener = new EventLogListenerImpl(configuration, createEventLogWatcherFacade);
+        }
+
+        private EventLogWatcherFacade createEventLogWatcherFacade(EventLogQueryFacade eventQuery) {
+            queries.Add(eventQuery);
+            var watcherFacade = A.Fake<EventLogWatcherFacade>();
+            watcherFacades.Add(watcherFacade);
+            return watcherFacade;
         }
 
         public void Dispose() {
@@ -64,7 +66,7 @@ namespace Tests.Services {
 
         [Fact]
         public void queryWithoutSource() {
-            EventLogQueryFacade actual = query[0];
+            EventLogQueryFacade actual = queries[0];
             Assert.Equal("Security", actual.path);
             Assert.Equal(PathType.LogName, actual.pathType);
             Assert.Equal("*[System/EventID=4625]", actual.query);
@@ -72,7 +74,7 @@ namespace Tests.Services {
 
         [Fact]
         public void queryWithSource() {
-            EventLogQueryFacade actual = query[1];
+            EventLogQueryFacade actual = queries[1];
             Assert.Equal("Application", actual.path);
             Assert.Equal(PathType.LogName, actual.pathType);
             Assert.Equal("*[System/EventID=0][System/Provider/@Name=\"sshd\"]", actual.query);
@@ -108,6 +110,37 @@ namespace Tests.Services {
             A.CallTo(() => record.GetPropertyValues(A<EventLogPropertySelectorFacade>._)).MustNotHaveHappened();
 
             Assert.Equal(IPAddress.Parse("71.194.180.25"), actualAddress);
+        }
+
+        [Fact]
+        public void logNameNotFoundSkipsSelector() {
+
+            Configuration invalidConfiguration = (Configuration) configuration.Clone();
+            invalidConfiguration.eventLogSelectors.Clear();
+            invalidConfiguration.eventLogSelectors.Add(new EventLogSelector {
+                logName = $"fake event log {Guid.NewGuid()}",
+                eventId = 0
+            });
+
+            var watcher = A.Fake<EventLogWatcherFacade>();
+            A.CallToSet(() => watcher.Enabled).Throws<EventLogNotFoundException>();
+
+            new EventLogListenerImpl(invalidConfiguration, _ => watcher);
+
+            A.CallTo(() => watcher.Dispose()).MustHaveHappened();
+        }
+
+        [Fact]
+        public void missingPatternGroupThrowsException() {
+            Configuration invalidConfiguration = (Configuration) configuration.Clone();
+            invalidConfiguration.eventLogSelectors.Clear();
+            invalidConfiguration.eventLogSelectors.Add(new EventLogSelector {
+                logName          = "Application",
+                eventId          = 0,
+                ipAddressPattern = new Regex("hello")
+            });
+
+            Assert.Throws<ArgumentException>(() => new EventLogListenerImpl(invalidConfiguration, query => new EventLogWatcherFacadeImpl(query)));
         }
 
     }

@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fail2Ban4Win", "Fail2Ban4Win\Fail2Ban4Win.csproj", "{F87074CC-C205-403F-8113-5F41716BE1CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,8 +19,7 @@ Global
 		{F87074CC-C205-403F-8113-5F41716BE1CB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

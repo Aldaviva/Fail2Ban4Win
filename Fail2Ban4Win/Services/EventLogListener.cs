@@ -7,6 +7,7 @@ using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using Fail2Ban4Win.Config;
+using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
 using NLog;
 
@@ -44,11 +45,19 @@ namespace Fail2Ban4Win.Services {
                         onEventRecordWritten(record, selector);
                     }
                 };
-                watcher.Enabled = true;
+
+                try {
+                    watcher.Enabled = true;
+                } catch (EventLogNotFoundException e) {
+                    LOGGER.Warn("Failed to listen for events in log {0}: {1}. Skipping this event selector.", selector.logName, e.Message);
+                    watcher.Dispose();
+                    return null;
+                }
+
                 LOGGER.Info("Listening for Event Log records from the {0} log with event ID {1} and {2}.", selector.logName, selector.eventId,
                     selector.source is not null ? "source " + selector.source : "any source");
                 return watcher;
-            }).ToList();
+            }).Compact().ToList();
         }
 
         private void onEventRecordWritten(EventLogRecordFacade record, EventLogSelector selector) {
@@ -71,8 +80,6 @@ namespace Fail2Ban4Win.Services {
                         LOGGER.Info("Authentication failure detected from {0} (log={1}, event={2}, source={3}).", failingIpAddress, record.LogName, record.Id, record.ProviderName);
                         failure?.Invoke(this, failingIpAddress);
                     }
-                } else {
-                    LOGGER.Trace("Could not find any IPv4 addresses in {0}", stringContainingIpAddress);
                 }
             }
         }

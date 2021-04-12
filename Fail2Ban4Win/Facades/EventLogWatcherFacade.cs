@@ -17,12 +17,15 @@ namespace Fail2Ban4Win.Facades {
 
     }
 
-    internal class EventLogWatcherFacadeImpl: EventLogWatcherFacade {
+    public class EventLogWatcherFacadeImpl: EventLogWatcherFacade {
 
         private readonly EventLogWatcher watcher;
 
         public event EventHandler<EventRecordWrittenEventArgsFacade>? EventRecordWritten;
 
+        /// <summary>Determines whether this object starts delivering events to the event delegate.</summary>
+        /// <returns>Returns <see langword="true" /> when this object can deliver events to the event delegate, and returns <see langword="false" /> when this object has stopped delivery.</returns>
+        /// <exception cref="EventLogNotFoundException">If the <c>EventLogQueryFacade.path</c> cannot be found while setting <c>Enabled</c> to <see langword="true" />.</exception>
         public bool Enabled {
             get => watcher.Enabled;
             set => watcher.Enabled = value;
