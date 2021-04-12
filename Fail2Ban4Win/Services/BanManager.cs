@@ -139,7 +139,7 @@ namespace Fail2Ban4Win.Services {
             banCount = Math.Max(1, banCount);
             return configuration.banPeriod + TimeSpan.FromMilliseconds(
                 (Math.Min(banCount, configuration.banRepeatedOffenseMax ?? 4) - 1) *
-                (configuration.banRepeatedOffenseCoefficient ?? 1) *
+                (configuration.banRepeatedOffenseCoefficient ?? 0) *
                 configuration.banPeriod.TotalMilliseconds);
         }
 
