@@ -36,27 +36,32 @@ namespace Fail2Ban4Win.Services {
 
         private readonly ConcurrentDictionary<IPNetwork, SubnetFailureHistory> failures                = new();
         private readonly CancellationTokenSource                               cancellationTokenSource = new();
+        private readonly ManualResetEventSlim                                  initialRuleDeletionDone = new(false);
 
         public BanManagerImpl(EventLogListener eventLogListener, Configuration configuration, FirewallFacade firewall) {
             this.eventLogListener = eventLogListener;
             this.configuration    = configuration;
             this.firewall         = firewall;
 
-            IEnumerable<FirewallWASRule> oldRules = firewall.Rules.Where(isBanRule()).ToList();
-            if (oldRules.Any()) {
-                LOGGER.Info("Deleting {0} existing {1} rules from Windows Firewall because they may be stale.", oldRules.Count(), GROUP_NAME);
-                foreach (FirewallWASRule oldRule in oldRules) {
-                    if (!configuration.isDryRun) {
-                        firewall.Rules.Remove(oldRule);
-                    }
-                }
-            }
-
             eventLogListener.failure += onFailure;
 
             if (configuration.isDryRun) {
                 LOGGER.Info("Started in dry run mode. No changes will be made to Windows Firewall.");
             }
+
+            Task.Run(() => {
+                IEnumerable<FirewallWASRule> oldRules = firewall.Rules.Where(isBanRule()).ToList();
+                if (oldRules.Any()) {
+                    LOGGER.Info("Deleting {0} existing {1} rules from Windows Firewall because they may be stale.", oldRules.Count(), GROUP_NAME);
+                    foreach (FirewallWASRule oldRule in oldRules) {
+                        if (!configuration.isDryRun) {
+                            firewall.Rules.Remove(oldRule);
+                        }
+                    }
+                }
+
+                initialRuleDeletionDone.Set();
+            }, cancellationTokenSource.Token);
         }
 
         private void onFailure(object sender, IPAddress ipAddress) {
@@ -104,6 +109,8 @@ namespace Fail2Ban4Win.Services {
         private void ban(IPNetwork subnet, SubnetFailureHistory clientFailureHistory) {
             clientFailureHistory.banCount++;
 
+            initialRuleDeletionDone.Wait(cancellationTokenSource.Token);
+
             DateTime now           = DateTime.Now;
             TimeSpan unbanDuration = getUnbanDuration(clientFailureHistory.banCount);
 
@@ -121,8 +128,6 @@ namespace Fail2Ban4Win.Services {
                 .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.LongRunning | TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current);
 
             LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:F} (in {2:g}).", subnet, unbanDuration, configuration.banPeriod);
-
-            LOGGER.Trace("Clearing internal history of failures for {0} now that a firewall rule has been created.", subnet);
 
             if (!configuration.isDryRun) {
                 clientFailureHistory.clear();

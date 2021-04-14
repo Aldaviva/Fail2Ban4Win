@@ -126,7 +126,7 @@ namespace Tests.Services {
         }
 
         [Fact]
-        public void deleteExistingRulesOnStartup() {
+        public async Task deleteExistingRulesOnStartup() {
             banManager.Dispose();
 
             firewallRules.Add(new FirewallWASRule("deleteme1", FirewallAction.Block, FirewallDirection.Inbound, FirewallProfiles.Public) { Grouping = "Fail2Ban4Win" });
@@ -135,6 +135,11 @@ namespace Tests.Services {
             Assert.NotEmpty(firewallRules);
 
             var manager = new BanManagerImpl(eventLogListener, configuration, firewallFacade);
+
+            Assert.NotEmpty(firewallRules);
+
+            //deletion runs asynchronously to speed up startup
+            await Task.Delay(100);
 
             Assert.Empty(firewallRules);
 
