@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31129.286
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fail2Ban4Win", "Fail2Ban4Win\Fail2Ban4Win.csproj", "{F87074CC-C205-403F-8113-5F41716BE1CB}"
 EndProject
@@ -19,7 +19,8 @@ Global
 		{F87074CC-C205-403F-8113-5F41716BE1CB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
