@@ -27,7 +27,7 @@ jobs:
         run: msbuild -t:restore -p:RestoreLockedMode=true
 
       - name: Build
-        run: msbuild -p:Configuration=Release -t:build
+        run: msbuild ${{ env.PROJECT_NAME }} -p:Configuration=Release -t:build
 
         # build again in Debug mode just for tests because Release tests would have duplicate dependencies as ILRepacked release code under test, causing error CS0433: The type 'LogLevel' exists in both 'Fail2Ban4Win, Version=1.0.1.0, Culture=neutral, PublicKeyToken=null' and 'NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c' [D:\a\Fail2Ban4Win\Fail2Ban4Win\Tests\Tests.csproj]
       - name: Test
