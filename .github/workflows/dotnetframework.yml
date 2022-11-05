@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+env:
+  PROJECT_NAME: Fail2Ban4Win
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Clone
+        uses: actions/checkout@v3
+
+      - name: Initialize test reporting
+        uses: testspace-com/setup-testspace@v1
+        with:
+          domain: ${{github.repository_owner}}
+
+      - name: Restore
+        run: msbuild -p:Configuration=Release -t:restore -p:RestoreLockedMode=true
+
+      - name: Build
+        run: msbuild -p:Configuration=Release -t:build
+
+      - name: Test
+        run: |
+          dotnet test --no-build --verbosity normal --configuration Release --collect:"XPlat Code Coverage" --settings Tests\Tests.runsettings --logger "trx;LogFileName=TestResults.xml"
+          mv Tests/TestResults/*/coverage.info Tests/TestResults
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.PROJECT_NAME }}
+          path: |
+            ${{ env.PROJECT_NAME }}\bin\Release\${{ env.PROJECT_NAME }}.exe*
+            ${{ env.PROJECT_NAME }}\bin\Release\Install service.ps1
+            ${{ env.PROJECT_NAME }}\bin\Release\configuration.json
+          if-no-files-found: error
+          
+      - name: Upload test report
+        run: testspace Tests/TestResults/TestResults.xml
+
+      - name: Upload coverage
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: Tests/TestResults/coverage.info
