@@ -19,7 +19,6 @@ You can customize the duration of the ban, the type of Event Log events to detec
 1. [Running](#running)
 1. [Monitoring](#monitoring)
 1. [Acknowledgments](#acknowledgments)
-1. [Contributor Code of Conduct](#contributor-code-of-conduct)
 
 <!-- /MarkdownTOC -->
 
@@ -153,7 +152,3 @@ You can see the block rules created by Fail2Ban4Win in Windows Firewall.
 - [`wail2ban` by Katie McLaughlin (`glasnt`)](https://github.com/glasnt/wail2ban) for being archived and motivating me to creating my own non-archived implementation.
 - [`win2ban`](https://itefix.net/win2ban) for charging twenty-nine American dollars for some cobbled together free open-source projects that made me indignant enough to create my own free, open-source, clean-room implementation.
 - [Robert Mustacchi (`rmustacc`)](https://github.com/rmustacc) for talking me out of trying to implement a wait-free list to store failure times and instead continuing to lock array lists.
-
-<a id="contributor-code-of-conduct"></a>
-## Contributor Code of Conduct
-- Please be nice to me.
