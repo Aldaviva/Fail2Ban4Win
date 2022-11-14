@@ -1,6 +1,6 @@
 version: 2
 updates:
   - package-ecosystem: "nuget"
-    directory: "/"
+    directory: "/Fail2Ban4Win"
     schedule:
       interval: "weekly"
