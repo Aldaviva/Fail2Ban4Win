@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,16 +8,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using WindowsFirewallHelper;
-using WindowsFirewallHelper.Addresses;
-using WindowsFirewallHelper.FirewallRules;
 using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
 using Fail2Ban4Win.Injection;
 using NLog;
-
-#nullable enable
+using WindowsFirewallHelper;
+using WindowsFirewallHelper.Addresses;
+using WindowsFirewallHelper.FirewallRules;
 
 namespace Fail2Ban4Win.Services {
 
@@ -52,7 +52,7 @@ namespace Fail2Ban4Win.Services {
             Task.Run(() => {
                 IEnumerable<FirewallWASRule> oldRules = firewall.Rules.Where(isBanRule()).ToList();
                 if (oldRules.Any()) {
-                    LOGGER.Info("Deleting {0} existing {1} rules from Windows Firewall because they may be stale.", oldRules.Count(), GROUP_NAME);
+                    LOGGER.Info("Deleting {0} existing {1} rules from Windows Firewall because they may be stale", oldRules.Count(), GROUP_NAME);
                     foreach (FirewallWASRule oldRule in oldRules) {
                         if (!configuration.isDryRun) {
                             firewall.Rules.Remove(oldRule);
@@ -80,24 +80,24 @@ namespace Fail2Ban4Win.Services {
         // this runs inside a lock on the SubnetFailureHistory
         private bool shouldBan(IPNetwork subnet, SubnetFailureHistory clientFailureHistory) {
             if (subnet.IsIANAReserved()) {
-                LOGGER.Debug("Not banning {0} because it is contained in an IANA-reserved block such as {1}.", subnet, IPNetwork.IANA_CBLK_RESERVED1);
+                LOGGER.Debug("Not banning {0} because it is contained in an IANA-reserved block such as {1}", subnet, IPNetwork.IANA_CBLK_RESERVED1);
                 return false;
             }
 
             if (LOOPBACK.Contains(subnet)) {
-                LOGGER.Debug("Not banning {0} because it is a loopback address.", subnet);
+                LOGGER.Debug("Not banning {0} because it is a loopback address", subnet);
                 return false;
             }
 
             IPNetwork? neverBanSubnet = configuration.neverBanSubnets?.FirstOrDefault(neverBan => neverBan.Overlap(subnet));
             if (neverBanSubnet is not null) {
-                LOGGER.Debug("Not banning {0} because it overlaps the {2} subnet in the \"neverBanSubnets\" values in {1}.", subnet, ConfigurationModule.CONFIGURATION_FILENAME, neverBanSubnet);
+                LOGGER.Debug("Not banning {0} because it overlaps the {2} subnet in the \"neverBanSubnets\" values in {1}", subnet, ConfigurationModule.CONFIGURATION_FILENAME, neverBanSubnet);
                 return false;
             }
 
             int recentFailureCount = clientFailureHistory.countFailuresSinceAndPrune(DateTimeOffset.Now - configuration.failureWindow);
             if (recentFailureCount <= configuration.maxAllowedFailures) {
-                LOGGER.Debug("Not banning {0} because it has only failed {1} times in the last {2}, which does not exceed the maximum {3} failures allowed.", subnet, recentFailureCount,
+                LOGGER.Debug("Not banning {0} because it has only failed {1} times in the last {2}, which does not exceed the maximum {3} failures allowed", subnet, recentFailureCount,
                     configuration.failureWindow, configuration.maxAllowedFailures);
                 return false;
             }
@@ -114,7 +114,7 @@ namespace Fail2Ban4Win.Services {
             DateTime now           = DateTime.Now;
             TimeSpan unbanDuration = getUnbanDuration(clientFailureHistory.banCount);
 
-            var rule = new FirewallWASRuleWin7(getRuleName(subnet), FirewallAction.Block, FirewallDirection.Inbound, ALL_PROFILES) {
+            FirewallWASRuleWin7 rule = new FirewallWASRuleWin7(getRuleName(subnet), FirewallAction.Block, FirewallDirection.Inbound, ALL_PROFILES) {
                 Description     = $"Banned {now:s}. Will unban {now + unbanDuration:s}. Offense #{clientFailureHistory.banCount:N0}.",
                 Grouping        = GROUP_NAME,
                 RemoteAddresses = new IAddress[] { new NetworkAddress(subnet.Network, subnet.Netmask) }
@@ -127,7 +127,7 @@ namespace Fail2Ban4Win.Services {
             Task.Delay(unbanDuration, cancellationTokenSource.Token)
                 .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.LongRunning | TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current);
 
-            LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:F} (in {2:g}).", subnet, unbanDuration, configuration.banPeriod);
+            LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:F} (in {2:g})", subnet, unbanDuration, configuration.banPeriod);
 
             if (!configuration.isDryRun) {
                 clientFailureHistory.clear();
@@ -151,7 +151,7 @@ namespace Fail2Ban4Win.Services {
         private void unban(IPNetwork subnet) {
             IEnumerable<FirewallWASRule> rulesToRemove = firewall.Rules.Where(isBanRule(subnet));
             foreach (FirewallWASRule rule in rulesToRemove) {
-                LOGGER.Info("Ban has expired on subnet {0}, removing firewall rule {1}.", subnet, rule.Name);
+                LOGGER.Info("Ban has expired on subnet {0}, removing firewall rule {1}", subnet, rule.Name);
                 if (!configuration.isDryRun) {
                     firewall.Rules.Remove(rule);
                 }

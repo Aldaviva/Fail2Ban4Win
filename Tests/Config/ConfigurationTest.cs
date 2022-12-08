@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -10,8 +12,6 @@ using LightInject;
 using Xunit;
 using Xunit.Abstractions;
 using LogLevel = NLog.LogLevel;
-
-#nullable enable
 
 namespace Tests.Config {
 
@@ -26,34 +26,41 @@ namespace Tests.Config {
             File.Move("configuration.json", "configuration.json.backup");
         }
 
-        private const string JSON = @"{
-	""maxAllowedFailures"": 9,
-	""failureWindow"": ""1.00:00:00"",
-	""banPeriod"": ""1.00:00:00"",
-    ""banSubnetBits"": 24,
-    ""banRepeatedOffenseCoefficient"": 1,
-    ""banRepeatedOffenseMax"": 4,
-    ""neverBanSubnets"": [
-        ""127.0.0.1/8"",
-        ""192.168.1.0/24"",
-        ""67.210.32.33"",
-        ""73.202.12.148""
-    ],
-	""eventLogSelectors"": [
-		{
-			""logName"": ""Security"",
-			""eventId"": 4625,
-			""ipAddressEventDataName"": ""IpAddress""
-		}, {
-			""logName"": ""Application"",
-			""source"": ""sshd"",
-			""eventId"": 0,
-			""ipAddressPattern"": ""^sshd: PID \\d+: Failed password for(?: invalid user)? \\S+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d+ ssh\\d?$""
-		}
-	],
-    ""isDryRun"": true,
-    ""logLevel"": ""info""
-}";
+        private const string JSON = """
+            {
+            	"maxAllowedFailures": 9,
+            	"failureWindow": "1.00:00:00",
+            	"banPeriod": "1.00:00:00",
+                "banSubnetBits": 24,
+                "banRepeatedOffenseCoefficient": 1,
+                "banRepeatedOffenseMax": 4,
+                "neverBanSubnets": [
+                    "127.0.0.1/8",
+                    "192.168.1.0/24",
+                    "67.210.32.33",
+                    "73.202.12.148"
+                ],
+            	"eventLogSelectors": [
+            		{
+            			"logName": "Security",
+            			"eventId": 4625,
+            			"ipAddressEventDataName": "IpAddress"
+            		}, {
+            			"logName": "Application",
+            			"source": "sshd",
+            			"eventId": 0,
+            			"ipAddressPattern": "^sshd: PID \\d+: Failed password for(?: invalid user)? \\S+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d+ ssh\\d?$"
+            		}, {
+                        "logName": "Application",
+                        "source": "MSExchangeFrontEndTransport",
+                        "eventId": 1035,
+                        "ipAddressEventDataIndex": 3
+                    }
+            	],
+                "isDryRun": true,
+                "logLevel": "info"
+            }
+            """;
 
         [Fact]
         public void parse() {
@@ -64,7 +71,7 @@ namespace Tests.Config {
             context.RegisterFrom<ConfigurationModule>();
             using Scope scope = context.BeginScope();
 
-            var actual = scope.GetInstance<Configuration>();
+            Configuration? actual = scope.GetInstance<Configuration>();
 
             Assert.Equal(9, actual.maxAllowedFailures);
             Assert.Equal(TimeSpan.FromDays(1), actual.failureWindow);
@@ -81,7 +88,7 @@ namespace Tests.Config {
             Assert.NotNull(actual.ToString());
 
             EventLogSelector[] actualSelectors = actual.eventLogSelectors.ToArray();
-            Assert.Equal(2, actualSelectors.Length);
+            Assert.Equal(3, actualSelectors.Length);
 
             EventLogSelector rdpSelector = actualSelectors[0];
             Assert.Equal("Security", rdpSelector.logName);
@@ -89,6 +96,7 @@ namespace Tests.Config {
             Assert.Equal("IpAddress", rdpSelector.ipAddressEventDataName);
             Assert.Null(rdpSelector.ipAddressPattern);
             Assert.Null(rdpSelector.source);
+            Assert.Equal(0, rdpSelector.ipAddressEventDataIndex);
             Assert.NotNull(rdpSelector.ToString());
 
             EventLogSelector cygwinSshdSelector = actualSelectors[1];
@@ -98,7 +106,17 @@ namespace Tests.Config {
             Assert.Equal(new Regex(@"^sshd: PID \d+: Failed password for(?: invalid user)? \S+ from (?<ipAddress>(?:\d{1,3}\.){3}\d{1,3}) port \d+ ssh\d?$").ToString(),
                 cygwinSshdSelector.ipAddressPattern!.ToString());
             Assert.Equal("sshd", cygwinSshdSelector.source);
+            Assert.Equal(0, cygwinSshdSelector.ipAddressEventDataIndex);
             Assert.NotNull(cygwinSshdSelector.ToString());
+
+            EventLogSelector exchangeFrontendSelector = actualSelectors[2];
+            Assert.Equal("Application", exchangeFrontendSelector.logName);
+            Assert.Equal(1035, exchangeFrontendSelector.eventId);
+            Assert.Null(exchangeFrontendSelector.ipAddressEventDataName);
+            Assert.Null(exchangeFrontendSelector.ipAddressPattern);
+            Assert.Equal("MSExchangeFrontEndTransport", exchangeFrontendSelector.source);
+            Assert.Equal(3, exchangeFrontendSelector.ipAddressEventDataIndex);
+            Assert.NotNull(exchangeFrontendSelector.ToString());
         }
 
         public void Dispose() {

@@ -1,11 +1,11 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using NLog;
-
-#nullable enable
 
 namespace Fail2Ban4Win.Config {
 
@@ -47,16 +47,18 @@ namespace Fail2Ban4Win.Config {
         public int eventId { get; set; }
         public Regex? ipAddressPattern { get; set; }
         public string? ipAddressEventDataName { get; set; }
+        public int ipAddressEventDataIndex { get; set; }
 
         public override string ToString() =>
-            $"{nameof(logName)}: {logName}, {nameof(source)}: {source}, {nameof(eventId)}: {eventId}, {nameof(ipAddressPattern)}: {ipAddressPattern}, {nameof(ipAddressEventDataName)}: {ipAddressEventDataName}";
+            $"{nameof(logName)}: {logName}, {nameof(source)}: {source}, {nameof(eventId)}: {eventId}, {nameof(ipAddressPattern)}: {ipAddressPattern}, {nameof(ipAddressEventDataName)}: {ipAddressEventDataName}, {nameof(ipAddressEventDataIndex)}: {ipAddressEventDataIndex}";
 
         public object Clone() => new EventLogSelector {
-            ipAddressEventDataName = ipAddressEventDataName,
-            eventId                = eventId,
-            ipAddressPattern       = ipAddressPattern is not null ? new Regex(ipAddressPattern.ToString(), ipAddressPattern.Options, ipAddressPattern.MatchTimeout) : null,
-            logName                = logName,
-            source                 = source
+            ipAddressEventDataName  = ipAddressEventDataName,
+            eventId                 = eventId,
+            ipAddressPattern        = ipAddressPattern is not null ? new Regex(ipAddressPattern.ToString(), ipAddressPattern.Options, ipAddressPattern.MatchTimeout) : null,
+            logName                 = logName,
+            source                  = source,
+            ipAddressEventDataIndex = ipAddressEventDataIndex
         };
 
     }

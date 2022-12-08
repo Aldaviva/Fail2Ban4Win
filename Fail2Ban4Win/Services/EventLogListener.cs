@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
@@ -10,8 +12,6 @@ using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
 using NLog;
-
-#nullable enable
 
 namespace Fail2Ban4Win.Services {
 
@@ -49,12 +49,17 @@ namespace Fail2Ban4Win.Services {
                 try {
                     watcher.Enabled = true;
                 } catch (EventLogNotFoundException e) {
-                    LOGGER.Warn("Failed to listen for events in log {0}: {1}. Skipping this event selector.", selector.logName, e.Message);
+                    LOGGER.Warn("Failed to listen for events in log {0}: {1}. Skipping this event selector", selector.logName, e.Message);
+                    watcher.Dispose();
+                    return null;
+                } catch (UnauthorizedAccessException e) {
+                    LOGGER.Warn("Failed to listen for events in log {0}, possibly because the log does not exist and this program is not running elevated: {1}. Skipping this event selector",
+                        selector.logName, e.Message);
                     watcher.Dispose();
                     return null;
                 }
 
-                LOGGER.Info("Listening for Event Log records from the {0} log with event ID {1} and {2}.", selector.logName, selector.eventId,
+                LOGGER.Info("Listening for Event Log records from the {0} log with event ID {1} and {2}", selector.logName, selector.eventId,
                     selector.source is not null ? "source " + selector.source : "any source");
                 return watcher;
             }).Compact().ToList();
@@ -64,9 +69,9 @@ namespace Fail2Ban4Win.Services {
             LOGGER.Trace("Received Event Log record from log {0} with event ID {1} and source {2}", record.LogName, record.Id, record.ProviderName);
 
             string? stringContainingIpAddress = selector.ipAddressEventDataName is null
-                ? record.Properties.FirstOrDefault()?.Value as string
+                ? record.Properties.ElementAtOrDefault(selector.ipAddressEventDataIndex)?.Value as string
                 : record.GetPropertyValues(new EventLogPropertySelectorFacade(new[] { $"Event/EventData/Data[@Name=\"{SecurityElement.Escape(selector.ipAddressEventDataName)}\"]" }))
-                    .FirstOrDefault() as string;
+                    .ElementAtOrDefault(selector.ipAddressEventDataIndex) as string;
 
             if (stringContainingIpAddress is not null) {
                 LOGGER.Trace("Searching for IPv4 address in {0}", stringContainingIpAddress);
@@ -77,7 +82,7 @@ namespace Fail2Ban4Win.Services {
                     IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>().Select(match => IPAddress.Parse(match.Groups["ipAddress"].Value));
 
                     foreach (IPAddress failingIpAddress in failingIpAddresses) {
-                        LOGGER.Info("Authentication failure detected from {0} (log={1}, event={2}, source={3}).", failingIpAddress, record.LogName, record.Id, record.ProviderName);
+                        LOGGER.Info("Authentication failure detected from {0} (log={1}, event={2}, source={3})", failingIpAddress, record.LogName, record.Id, record.ProviderName);
                         failure?.Invoke(this, failingIpAddress);
                     }
                 }

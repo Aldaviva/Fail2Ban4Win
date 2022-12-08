@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
@@ -12,8 +14,6 @@ using NLog;
 using Tests.Logging;
 using Xunit;
 using Xunit.Abstractions;
-
-#nullable enable
 
 namespace Tests.Services {
 
@@ -38,6 +38,12 @@ namespace Tests.Services {
                     source           = "sshd",
                     eventId          = 0,
                     ipAddressPattern = new Regex(@"^sshd: PID \d+: Failed password for(?: invalid user)? \S+ from (?<ipAddress>(?:\d{1,3}\.){3}\d{1,3}) port \d+ ssh\d?$")
+                },
+                new EventLogSelector {
+                    logName                 = "Application",
+                    source                  = "MSExchangeFrontEndTransport",
+                    eventId                 = 1035,
+                    ipAddressEventDataIndex = 3
                 }
             }
         };
@@ -55,7 +61,7 @@ namespace Tests.Services {
 
         private EventLogWatcherFacade createEventLogWatcherFacade(EventLogQueryFacade eventQuery) {
             queries.Add(eventQuery);
-            var watcherFacade = A.Fake<EventLogWatcherFacade>();
+            EventLogWatcherFacade watcherFacade = A.Fake<EventLogWatcherFacade>();
             watcherFacades.Add(watcherFacade);
             return watcherFacade;
         }
@@ -122,7 +128,7 @@ namespace Tests.Services {
                 eventId = 0
             });
 
-            var watcher = A.Fake<EventLogWatcherFacade>();
+            EventLogWatcherFacade watcher = A.Fake<EventLogWatcherFacade>();
             A.CallToSet(() => watcher.Enabled).Throws<EventLogNotFoundException>();
 
             new EventLogListenerImpl(invalidConfiguration, _ => watcher);
@@ -141,6 +147,26 @@ namespace Tests.Services {
             });
 
             Assert.Throws<ArgumentException>(() => new EventLogListenerImpl(invalidConfiguration, query => new EventLogWatcherFacadeImpl(query)));
+        }
+
+        [Fact]
+        public void eventDataIndex() {
+            EventLogRecordFacade record = A.Fake<EventLogRecordFacade>();
+            A.CallTo(() => record.Properties).Returns(new List<EventPropertyFacade> {
+                new("LogonDenied"),
+                new("Default Frontend WIN-EXCHANGE"),
+                new("Login"),
+                new("42.85.233.11")
+            });
+            IPAddress? actualAddress = null;
+            listener.failure += (_, address) => actualAddress = address;
+
+            watcherFacades[2].EventRecordWritten += Raise.With(null, new EventRecordWrittenEventArgsFacade(record));
+
+            A.CallTo(() => record.Properties).MustHaveHappened();
+            A.CallTo(() => record.GetPropertyValues(A<EventLogPropertySelectorFacade>._)).MustNotHaveHappened();
+
+            Assert.Equal(IPAddress.Parse("42.85.233.11"), actualAddress);
         }
 
     }
