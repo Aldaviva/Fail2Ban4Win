@@ -13,7 +13,7 @@ using Xunit;
 using Xunit.Abstractions;
 using LogLevel = NLog.LogLevel;
 
-namespace Tests.Config; 
+namespace Tests.Config;
 
 [CollectionDefinition(nameof(ConfigurationTest), DisableParallelization = true)]
 [Collection(nameof(ConfigurationTest))]
@@ -32,7 +32,7 @@ public class ConfigurationTest: IDisposable {
             	"failureWindow": "1.00:00:00",
             	"banPeriod": "1.00:00:00",
                 "banSubnetBits": 24,
-                "banRepeatedOffenseCoefficient": 1,
+                "banRepeatedOffenseCoefficient": 1.5,
                 "banRepeatedOffenseMax": 4,
                 "neverBanSubnets": [
                     "127.0.0.1/8",
@@ -77,7 +77,7 @@ public class ConfigurationTest: IDisposable {
         Assert.Equal(TimeSpan.FromDays(1), actual.failureWindow);
         Assert.Equal(TimeSpan.FromDays(1), actual.banPeriod);
         Assert.Equal(24, actual.banSubnetBits!.Value);
-        Assert.Equal(1, actual.banRepeatedOffenseCoefficient!.Value);
+        Assert.Equal(1.5, actual.banRepeatedOffenseCoefficient!.Value);
         Assert.Equal(4, actual.banRepeatedOffenseMax!.Value);
         Assert.True(actual.isDryRun);
         Assert.Equal(LogLevel.Info, actual.logLevel);

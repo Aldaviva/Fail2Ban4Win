@@ -7,7 +7,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using NLog;
 
-namespace Fail2Ban4Win.Config; 
+namespace Fail2Ban4Win.Config;
 
 public class Configuration: ICloneable {
 
@@ -16,7 +16,7 @@ public class Configuration: ICloneable {
     public TimeSpan failureWindow { get; set; }
     public TimeSpan banPeriod { get; set; }
     public byte? banSubnetBits { get; set; }
-    public int? banRepeatedOffenseCoefficient { get; set; }
+    public double? banRepeatedOffenseCoefficient { get; set; }
     public int? banRepeatedOffenseMax { get; set; }
     public LogLevel? logLevel { get; set; }
     public ICollection<IPNetwork>? neverBanSubnets { get; set; }
