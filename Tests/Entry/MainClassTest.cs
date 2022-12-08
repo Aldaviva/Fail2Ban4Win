@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,18 +9,16 @@ using Tests.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-#nullable enable
+namespace Tests.Entry; 
 
-namespace Tests.Entry {
+public class MainClassTest: IDisposable {
 
-    public class MainClassTest: IDisposable {
+    public MainClassTest(ITestOutputHelper testOutputHelper) {
+        XunitTestOutputTarget.start(testOutputHelper);
+        File.Move("configuration.json", "configuration.json.backup");
+    }
 
-        public MainClassTest(ITestOutputHelper testOutputHelper) {
-            XunitTestOutputTarget.start(testOutputHelper);
-            File.Move("configuration.json", "configuration.json.backup");
-        }
-
-        private const string JSON = @"{
+    private const string JSON = @"{
 	""maxAllowedFailures"": 9,
 	""failureWindow"": ""1.00:00:00"",
 	""banPeriod"": ""1.00:00:00"",
@@ -47,24 +47,22 @@ namespace Tests.Entry {
     ""logLevel"": ""info""
 }";
 
-        [Fact]
-        public async Task start() {
-            File.WriteAllText("configuration.json", JSON, Encoding.UTF8);
+    [Fact]
+    public async Task start() {
+        File.WriteAllText("configuration.json", JSON, Encoding.UTF8);
 
-            Task main = Task.Run(() => MainClass.Main(new string[0]));
+        Task main = Task.Run(() => MainClass.Main(new string[0]));
 
-            await Task.Delay(200);
+        await Task.Delay(200);
 
-            MainClass.stop();
+        MainClass.stop();
 
-            await main;
-        }
+        await main;
+    }
 
-        public void Dispose() {
-            File.Delete("configuration.json");
-            File.Move("configuration.json.backup", "configuration.json");
-        }
-
+    public void Dispose() {
+        File.Delete("configuration.json");
+        File.Move("configuration.json.backup", "configuration.json");
     }
 
 }

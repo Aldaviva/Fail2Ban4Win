@@ -1,17 +1,15 @@
 ﻿using System;
 
-namespace Fail2Ban4Win.Data {
+namespace Fail2Ban4Win.Data; 
 
-    public interface SubnetFailureHistory {
+public interface SubnetFailureHistory {
 
-        int banCount { get; set; }
+    int banCount { get; set; }
 
-        void clear();
+    void clear();
 
-        void add(DateTimeOffset failureTime);
+    void add(DateTimeOffset failureTime);
 
-        int countFailuresSinceAndPrune(DateTimeOffset minFailureTime);
-
-    }
+    int countFailuresSinceAndPrune(DateTimeOffset minFailureTime);
 
 }
