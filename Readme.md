@@ -110,7 +110,7 @@ In this example, we will go through the process of creating an event for Windows
     ```
 1. The `ipAddressEventDataName` value comes from the `<Data>` element that contains the IP address in its text content. In this case, that element has the `Name` attribute value of **`payload`**.
     - If there were just one `<Data>` element with no `Name` attribute, you would omit the `ipAddressEventDataName` property from the event log selector object.
-    - If there were multiple `<Data>` elements with no `Name` attributes, you would omit the `ipAddressEventDataName` property and set `ipAddressEventDataIndex` to the offset of the desired element (starting from 0) in the event log selector object.
+    - If there were multiple `<Data>` elements with no `Name` attributes, you would omit the `ipAddressEventDataName` property and set `ipAddressEventDataIndex` to the position of the desired `Data` element (where the first `Data` child of the `EventData` element would have index 0).
 1. The `ipAddressPattern` helps narrow down which events represent auth failures. Some events in this log with ID 4 are caused by successful auth attempts or disconnections, which should not trigger firewall bans. By matching the text of an auth failure, the correct events will be processed. The [following pattern](https://regex101.com/r/ZdJqcT/1) matches only auth failures and captures the IP address in a named group for processing.
     ```regex
     ^Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\d{1,3}\.){3}\d{1,3}) port \d{1,5} ssh\d?$
