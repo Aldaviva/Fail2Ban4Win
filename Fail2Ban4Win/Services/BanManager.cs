@@ -124,8 +124,8 @@ public class BanManagerImpl: BanManager {
             firewall.Rules.Add(rule);
         }
 
-        Task.Delay(unbanDuration, cancellationTokenSource.Token)
-            .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.LongRunning | TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current);
+        LongDelay(unbanDuration, cancellationTokenSource.Token)
+            .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current);
 
         LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:F} (in {2:g})", subnet, unbanDuration, configuration.banPeriod);
 
@@ -134,7 +134,7 @@ public class BanManagerImpl: BanManager {
         }
     }
 
-    /// <summary>For first offenses, this returns <c>banPeriod</c> (from <c>configuration.json</c>). For repeated offenses, the ban period is increased by <c>banRepeatedOffenseCoefficient</c> each time. The ban period stops increasing after <c>banRepeatedOffenseMax</c> offenses. <list type="bullet">sfsdf</list></summary>
+    /// <summary>For first offenses, this returns <c>banPeriod</c> (from <c>configuration.json</c>). For repeated offenses, the ban period is increased by <c>banRepeatedOffenseCoefficient</c> each time. The ban period stops increasing after <c>banRepeatedOffenseMax</c> offenses.</summary>
     /// <remarks>
     ///     <para>Example using <c>banPeriod</c> = 1 day, <c>banRepeatedOffenseCoefficient</c> = 1, and <c>banRepeatedOffenseMax</c> = 4:</para>
     ///     <list type="table"><listheader><term>Offense</term> <description>Ban duration</description></listheader> <item><term>1st</term> <description>1 day</description></item> <item><term>2nd</term> <description>2 days</description></item> <item><term>3rd</term> <description>3 days</description></item> <item><term>4th</term> <description>4 days</description></item> <item><term>5th</term> <description>4 days</description></item> <item><term>6th</term> <description>4 days</description></item></list></remarks>
@@ -164,6 +164,23 @@ public class BanManagerImpl: BanManager {
     }
 
     private static string getRuleName(IPNetwork ipAddress) => $"Banned {ipAddress}";
+
+    private static Task LongDelay(TimeSpan duration, CancellationToken cancellationToken = default) {
+        /*
+         * max duration of Task.Delay before .NET 6
+         * https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.delay?view=netframework-4.8#system-threading-tasks-task-delay(system-timespan-system-threading-cancellationtoken)
+         */
+        TimeSpan maxShortDelay = TimeSpan.FromMilliseconds(int.MaxValue);
+        Task     result        = Task.CompletedTask;
+
+        for (TimeSpan remaining = duration; remaining > TimeSpan.Zero; remaining = remaining.Subtract(maxShortDelay)) {
+            TimeSpan shortDelay = remaining > maxShortDelay ? maxShortDelay : remaining;
+            result = result.ContinueWith(_ => Task.Delay(shortDelay, cancellationToken), cancellationToken,
+                TaskContinuationOptions.LongRunning | TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current).Unwrap();
+        }
+
+        return result;
+    }
 
     public void Dispose() {
         eventLogListener.failure -= onFailure;

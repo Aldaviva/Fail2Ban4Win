@@ -18,7 +18,7 @@ using WindowsFirewallHelper.FirewallRules;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Tests.Services; 
+namespace Tests.Services;
 
 public class BanManagerTest: IDisposable {
 
@@ -114,7 +114,7 @@ public class BanManagerTest: IDisposable {
 
         configuration.isDryRun = true;
 
-        BanManagerImpl manager = new BanManagerImpl(eventLogListener, configuration, firewallFacade);
+        BanManagerImpl manager = new(eventLogListener, configuration, firewallFacade);
 
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
             eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
@@ -134,7 +134,7 @@ public class BanManagerTest: IDisposable {
 
         Assert.NotEmpty(firewallRules);
 
-        BanManagerImpl manager = new BanManagerImpl(eventLogListener, configuration, firewallFacade);
+        BanManagerImpl manager = new(eventLogListener, configuration, firewallFacade);
 
         Assert.NotEmpty(firewallRules);
 
@@ -163,8 +163,9 @@ public class BanManagerTest: IDisposable {
 
     [Theory]
     [MemberData(nameof(BAN_DURATION_DATA))]
-    public void banDuration(int offense, TimeSpan expectedDuration) {
-        configuration.banPeriod = TimeSpan.FromMinutes(1);
+    public void banDuration(int offense, double coefficient, TimeSpan expectedDuration) {
+        configuration.banPeriod                     = TimeSpan.FromMinutes(1);
+        configuration.banRepeatedOffenseCoefficient = coefficient;
 
         TimeSpan actual = banManager.getUnbanDuration(offense);
 
@@ -172,13 +173,37 @@ public class BanManagerTest: IDisposable {
     }
 
     public static readonly IEnumerable<object[]> BAN_DURATION_DATA = new[] {
-        new object[] { 1, TimeSpan.FromMinutes(1) },
-        new object[] { 2, TimeSpan.FromMinutes(2) },
-        new object[] { 3, TimeSpan.FromMinutes(3) },
-        new object[] { 4, TimeSpan.FromMinutes(4) },
-        new object[] { 5, TimeSpan.FromMinutes(4) },
-        new object[] { 6, TimeSpan.FromMinutes(4) }
+        new object[] { 1, 1.0, TimeSpan.FromMinutes(1) },
+        new object[] { 2, 1.0, TimeSpan.FromMinutes(2) },
+        new object[] { 3, 1.0, TimeSpan.FromMinutes(3) },
+        new object[] { 4, 1.0, TimeSpan.FromMinutes(4) },
+        new object[] { 5, 1.0, TimeSpan.FromMinutes(4) },
+        new object[] { 6, 1.0, TimeSpan.FromMinutes(4) },
+        new object[] { 1, 1.5, TimeSpan.FromMinutes(1) },
+        new object[] { 2, 1.5, TimeSpan.FromMinutes(2.5) },
+        new object[] { 3, 1.5, TimeSpan.FromMinutes(4) },
+        new object[] { 4, 1.5, TimeSpan.FromMinutes(5.5) },
+        new object[] { 5, 1.5, TimeSpan.FromMinutes(5.5) },
+        new object[] { 6, 1.5, TimeSpan.FromMinutes(5.5) },
+        new object[] { 1, 2.0, TimeSpan.FromMinutes(1) },
+        new object[] { 2, 2.0, TimeSpan.FromMinutes(3) },
+        new object[] { 3, 2.0, TimeSpan.FromMinutes(5) },
+        new object[] { 4, 2.0, TimeSpan.FromMinutes(7) },
+        new object[] { 5, 2.0, TimeSpan.FromMinutes(7) },
+        new object[] { 6, 2.0, TimeSpan.FromMinutes(7) },
     };
+
+    [Fact]
+    public async Task longDelaysDoNotCrash() {
+        configuration.banPeriod = TimeSpan.FromDays(364);
+
+        IPAddress sourceAddress = IPAddress.Parse("198.51.100.1");
+        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+            eventLogListener.failure += Raise.With(null, sourceAddress);
+        }
+
+        Assert.NotEmpty(firewallRules);
+    }
 
     private class FakeFirewallRulesCollection: List<FirewallWASRule>, IFirewallWASRulesCollection<FirewallWASRule> {
 
