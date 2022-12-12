@@ -99,7 +99,7 @@ public class BanManagerTest: IDisposable {
         }
 
         Assert.NotEmpty(firewallRules);
-        FirewallWASRule actual = firewallRules.First();
+        FirewallWASRule actual = Assert.Single(firewallRules);
         Assert.True(actual.IsEnable);
         Assert.Equal("Banned 192.0.2.0/24", actual.Name);
         Assert.Equal("Fail2Ban4Win", actual.Grouping);
