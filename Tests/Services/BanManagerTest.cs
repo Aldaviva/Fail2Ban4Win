@@ -194,7 +194,7 @@ public class BanManagerTest: IDisposable {
     };
 
     [Fact]
-    public async Task longDelaysDoNotCrash() {
+    public void longDelaysDoNotCrash() {
         configuration.banPeriod = TimeSpan.FromDays(364);
 
         IPAddress sourceAddress = IPAddress.Parse("198.51.100.1");
