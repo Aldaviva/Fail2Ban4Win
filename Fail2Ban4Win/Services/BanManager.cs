@@ -33,6 +33,7 @@ public class BanManagerImpl: BanManager {
     private readonly EventLogListener eventLogListener;
     private readonly Configuration    configuration;
     private readonly FirewallFacade   firewall;
+    private readonly IPAddress        subnetMask;
 
     private readonly ConcurrentDictionary<IPNetwork, SubnetFailureHistory> failures                = new();
     private readonly CancellationTokenSource                               cancellationTokenSource = new();
@@ -42,6 +43,8 @@ public class BanManagerImpl: BanManager {
         this.eventLogListener = eventLogListener;
         this.configuration    = configuration;
         this.firewall         = firewall;
+
+        subnetMask = IPNetwork.ToNetmask((byte) (32 - (this.configuration.banSubnetBits ?? 0)), AddressFamily.InterNetwork);
 
         eventLogListener.failure += onFailure;
 
@@ -65,7 +68,7 @@ public class BanManagerImpl: BanManager {
     }
 
     private void onFailure(object sender, IPAddress ipAddress) {
-        IPNetwork subnet = IPNetwork.Parse(ipAddress, IPNetwork.ToNetmask((byte) (32 - (configuration.banSubnetBits ?? 0)), AddressFamily.InterNetwork));
+        IPNetwork subnet = IPNetwork.Parse(ipAddress, subnetMask);
 
         SubnetFailureHistory failuresForSubnet = failures.GetOrAdd(subnet, _ => new ArrayListSubnetFailureHistory(configuration.maxAllowedFailures));
         lock (failuresForSubnet) {
@@ -102,6 +105,11 @@ public class BanManagerImpl: BanManager {
             return false;
         }
 
+        if (firewall.Rules.Any(isBanRule(subnet))) {
+            LOGGER.Debug("Not banning {0} because it is already banned. This is likely caused by receiving many failed requests before our first firewall rule took effect", subnet);
+            return false;
+        }
+
         return true;
     }
 
@@ -130,7 +138,7 @@ public class BanManagerImpl: BanManager {
         LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:F} (in {2:g})", subnet, unbanDuration, configuration.banPeriod);
 
         if (!configuration.isDryRun) {
-            clientFailureHistory.clear();
+            clientFailureHistory.clearFailures();
         }
     }
 

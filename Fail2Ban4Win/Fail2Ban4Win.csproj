@@ -99,7 +99,7 @@
       <Version>2.0.18.2</Version>
     </PackageReference>
     <PackageReference Include="IPNetwork2">
-      <Version>2.6.533</Version>
+      <Version>2.6.536</Version>
     </PackageReference>
     <PackageReference Include="LightInject">
       <Version>6.6.1</Version>

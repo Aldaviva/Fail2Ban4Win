@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace Fail2Ban4Win.Data; 
+namespace Fail2Ban4Win.Data;
 
 public interface SubnetFailureHistory {
 
     int banCount { get; set; }
 
-    void clear();
+    void clearFailures();
 
     void add(DateTimeOffset failureTime);
 
