@@ -109,6 +109,22 @@ public class BanManagerTest: IDisposable {
     }
 
     [Fact]
+    public void dontBanWhenSameRuleAlreadyExists() {
+        for (int i = 0; i < 2 * (MAX_ALLOWED_FAILURES + 1); i++) {
+            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+        }
+
+        Assert.NotEmpty(firewallRules);
+        FirewallWASRule actual = Assert.Single(firewallRules);
+        Assert.True(actual.IsEnable);
+        Assert.Equal("Banned 192.0.2.0/24", actual.Name);
+        Assert.Equal("Fail2Ban4Win", actual.Grouping);
+        Assert.Equal(FirewallAction.Block, actual.Action);
+        Assert.Equal(FirewallDirection.Inbound, actual.Direction);
+        Assert.Equal(NetworkAddress.Parse("192.0.2.0/24"), actual.RemoteAddresses[0]);
+    }
+
+    [Fact]
     public void dontBanInDryRunMode() {
         banManager.Dispose();
 
