@@ -102,7 +102,7 @@
       <Version>2.6.543</Version>
     </PackageReference>
     <PackageReference Include="LightInject">
-      <Version>6.6.1</Version>
+      <Version>6.6.3</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder">
       <Version>7.0.1</Version>
