@@ -10,15 +10,15 @@
       },
       "IPNetwork2": {
         "type": "Direct",
-        "requested": "[2.6.543, )",
-        "resolved": "2.6.543",
-        "contentHash": "/UsFU3E7dGP6CEwTsGnXiVZyw+B9yi/CuP7G66P05T/RpNW7x4X4atvLYbDCbtFcpaelfv683DngD5vdFnLyGA=="
+        "requested": "[2.6.548, )",
+        "resolved": "2.6.548",
+        "contentHash": "ls5uJdF1BKthcGik/k2NHIW9y6HhHnasS0ekvbWb804cFg8Z4ARudTUg3x7S55801bnWihdvYrH8o6R2cc7neg=="
       },
       "LightInject": {
         "type": "Direct",
-        "requested": "[6.6.1, )",
-        "resolved": "6.6.1",
-        "contentHash": "ejYujmAGVwKCLBZyKGYz3A09R+cboK1BAaQHZzBQJm+XQH6gHeOyNOl0KzbjBUmEM9gBuOzyOHgenAo1zMDQSA==",
+        "requested": "[6.6.3, )",
+        "resolved": "6.6.3",
+        "contentHash": "pflcikNFnhI/xi9zz26RJ/4TGU0lKTT+kvqNIB0UuGTUKSJ1D7AN5QKdg44+/wm1zosjbOW1EbHUixWCSWL/BA==",
         "dependencies": {
           "System.ValueTuple": "4.5.0"
         }
@@ -47,9 +47,9 @@
       },
       "NLog": {
         "type": "Direct",
-        "requested": "[5.1.0, )",
-        "resolved": "5.1.0",
-        "contentHash": "oW7ekrkRG9okpDMUcEglunWj8Qf2RY8qkgl+/chJoavzg3dbT13y32t19R54FKkmq80fKzw4ZekZkCrRGanKgQ=="
+        "requested": "[5.1.1, )",
+        "resolved": "5.1.1",
+        "contentHash": "YBfUDzipCaucs+8ieCDp8XECumiWsQbZwSUVLlt9i7FGV03nOPqoVzLtmlhbTxq4TN92BBsLacqPAE/ZyDDJ1g=="
       },
       "WindowsFirewallHelper": {
         "type": "Direct",
