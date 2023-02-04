@@ -7,7 +7,7 @@
                 <Configuration>
                     <Format>lcov</Format>
                     <Exclude>[*]*.Facades?.*,[*]*.Façades?.*</Exclude>
-                    <ExcludeByFile>*.Designer.cs</ExcludeByFile>
+                    <ExcludeByFile>**/*.Designer.cs</ExcludeByFile>
                 </Configuration>
             </DataCollector>
         </DataCollectors>
