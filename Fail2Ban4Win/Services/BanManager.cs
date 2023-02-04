@@ -133,9 +133,11 @@ public class BanManagerImpl: BanManager {
         }
 
         LongDelay(unbanDuration, cancellationTokenSource.Token)
-            .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current);
+            .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current)
+            .ContinueWith(result => LOGGER.Error(result.Exception, "Exception unbanning subnet {0}", subnet), cancellationTokenSource.Token, TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Current);
 
-        LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:F} (in {2:g})", subnet, unbanDuration, configuration.banPeriod);
+        LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:O} (in {2:g})", subnet, now + unbanDuration, configuration.banPeriod);
 
         if (!configuration.isDryRun) {
             clientFailureHistory.clearFailures();
@@ -157,7 +159,7 @@ public class BanManagerImpl: BanManager {
     }
 
     private void unban(IPNetwork subnet) {
-        IEnumerable<FirewallWASRule> rulesToRemove = firewall.Rules.Where(isBanRule(subnet));
+        IEnumerable<FirewallWASRule> rulesToRemove = firewall.Rules.Where(isBanRule(subnet)).ToList(); //eagerly evaluate Where clause to prevent concurrent modification below
         foreach (FirewallWASRule rule in rulesToRemove) {
             LOGGER.Info("Ban has expired on subnet {0}, removing firewall rule {1}", subnet, rule.Name);
             if (!configuration.isDryRun) {

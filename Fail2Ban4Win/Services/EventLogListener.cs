@@ -13,7 +13,7 @@ using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
 using NLog;
 
-namespace Fail2Ban4Win.Services; 
+namespace Fail2Ban4Win.Services;
 
 public interface EventLogListener: IDisposable {
 
@@ -53,7 +53,7 @@ public class EventLogListenerImpl: EventLogListener {
                 watcher.Dispose();
                 return null;
             } catch (UnauthorizedAccessException e) {
-                LOGGER.Warn("Failed to listen for events in log {0}, possibly because the log does not exist and this program is not running elevated: {1}. Skipping this event selector",
+                LOGGER.Warn("Failed to listen for events in log {0}, possibly because the log does not exist and this program is not running elevated. Skipping this event selector. {1}",
                     selector.logName, e.Message);
                 watcher.Dispose();
                 return null;

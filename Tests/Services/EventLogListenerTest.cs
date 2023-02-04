@@ -137,6 +137,24 @@ public class EventLogListenerTest: IDisposable {
     }
 
     [Fact]
+    public void logPermissionDeniedSkipsSelector() {
+
+        Configuration invalidConfiguration = (Configuration) configuration.Clone();
+        invalidConfiguration.eventLogSelectors.Clear();
+        invalidConfiguration.eventLogSelectors.Add(new EventLogSelector {
+            logName = $"fake event log {Guid.NewGuid()}",
+            eventId = 0
+        });
+
+        EventLogWatcherFacade watcher = A.Fake<EventLogWatcherFacade>();
+        A.CallToSet(() => watcher.Enabled).Throws<UnauthorizedAccessException>();
+
+        new EventLogListenerImpl(invalidConfiguration, _ => watcher);
+
+        A.CallTo(() => watcher.Dispose()).MustHaveHappened();
+    }
+
+    [Fact]
     public void missingPatternGroupThrowsException() {
         Configuration invalidConfiguration = (Configuration) configuration.Clone();
         invalidConfiguration.eventLogSelectors.Clear();

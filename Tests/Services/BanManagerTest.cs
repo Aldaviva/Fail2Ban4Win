@@ -164,7 +164,32 @@ public class BanManagerTest: IDisposable {
 
     [Fact]
     public async Task unbanAfterBanExpired() {
-        IPAddress sourceAddress = IPAddress.Parse("198.51.100.1");
+        IEnumerable<IPAddress> sourceAddresses = new[] {
+            IPAddress.Parse("198.51.100.1"),
+            IPAddress.Parse("101.206.243.0")
+        };
+
+        foreach (IPAddress sourceAddress in sourceAddresses) {
+            for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+                eventLogListener.failure += Raise.With(null, sourceAddress);
+            }
+        }
+
+        Assert.NotEmpty(firewallRules);
+
+        await Task.Delay((int) configuration.banPeriod.TotalMilliseconds * 2);
+
+        testOutput.WriteLine("banPeriod = {0}", configuration.banPeriod);
+        Assert.Empty(firewallRules);
+    }
+
+    [Fact]
+    public async Task unbanCatchesAndLogsExceptions() {
+        var throwingFirewallRules = A.Fake<IFirewallWASRulesCollection<FirewallWASRule>>(options => options.Wrapping(firewallRules));
+        A.CallTo(() => throwingFirewallRules.Remove(A<FirewallWASRule>._)).Throws<InvalidOperationException>();
+        A.CallTo(() => firewallFacade.Rules).Returns(throwingFirewallRules);
+
+        IPAddress sourceAddress = IPAddress.Parse("103.153.254.0");
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
             eventLogListener.failure += Raise.With(null, sourceAddress);
         }
@@ -174,7 +199,7 @@ public class BanManagerTest: IDisposable {
         await Task.Delay((int) configuration.banPeriod.TotalMilliseconds * 2);
 
         testOutput.WriteLine("banPeriod = {0}", configuration.banPeriod);
-        Assert.Empty(firewallRules);
+        Assert.NotEmpty(firewallRules);
     }
 
     [Theory]

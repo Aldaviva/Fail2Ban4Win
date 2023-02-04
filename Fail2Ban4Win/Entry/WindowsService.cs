@@ -7,7 +7,7 @@ using LightInject;
 using NLog;
 using NLog.Config;
 
-namespace Fail2Ban4Win.Entry; 
+namespace Fail2Ban4Win.Entry;
 
 public partial class WindowsService: ServiceBase {
 
@@ -32,11 +32,11 @@ public partial class WindowsService: ServiceBase {
         context?.Dispose();
     }
 
-    public void stop() {
+    public void stopManually() {
         OnStop();
     }
 
-    public void start(string[] args) {
+    public void startManually(string[] args) {
         OnStart(args);
     }
 

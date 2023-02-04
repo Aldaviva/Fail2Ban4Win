@@ -1,0 +1,10 @@
+﻿EnumWindowStations
+GetProcessWindowStation
+SetProcessWindowStation
+GetUserObjectInformation
+OpenWindowStation
+USEROBJECTFLAGS
+EnumDesktops
+OpenDesktop
+EnumDesktopWindows
+CreateWindowStation

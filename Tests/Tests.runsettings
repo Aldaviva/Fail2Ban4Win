@@ -3,9 +3,11 @@
     <DataCollectionRunSettings>
         <DataCollectors>
             <DataCollector friendlyName="XPlat code coverage">
+                <!-- Coverlet configuration: https://github.com/coverlet-coverage/coverlet/blob/master/Documentation/MSBuildIntegration.md -->
                 <Configuration>
                     <Format>lcov</Format>
                     <Exclude>[*]*.Facades?.*,[*]*.Façades?.*</Exclude>
+                    <ExcludeByFile>*.Designer.cs</ExcludeByFile>
                 </Configuration>
             </DataCollector>
         </DataCollectors>
