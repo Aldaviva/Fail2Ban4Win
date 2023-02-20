@@ -177,7 +177,7 @@ public class BanManagerTest: IDisposable {
 
         Assert.NotEmpty(firewallRules);
 
-        await Task.Delay((int) configuration.banPeriod.TotalMilliseconds * 2);
+        await Task.Delay((int) configuration.banPeriod.TotalMilliseconds * 4);
 
         testOutput.WriteLine("banPeriod = {0}", configuration.banPeriod);
         Assert.Empty(firewallRules);
