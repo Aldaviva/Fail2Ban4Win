@@ -248,14 +248,36 @@ public class BanManagerTest: IDisposable {
 
     private class FakeFirewallRulesCollection: List<FirewallWASRule>, IFirewallWASRulesCollection<FirewallWASRule> {
 
+        private readonly object mutex = new();
+
         public FirewallWASRule? this[string name] => this.FirstOrDefault(rule => rule.Name == name);
 
         public bool Remove(string name) {
-            if (this[name] is { } ruleToRemove) {
-                Remove(ruleToRemove);
-                return true;
-            } else {
-                return false;
+            lock (mutex) {
+                if (this[name] is { } ruleToRemove) {
+                    Remove(ruleToRemove);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        void ICollection<FirewallWASRule>.Add(FirewallWASRule item) {
+            lock (mutex) {
+                Add(item);
+            }
+        }
+
+        void ICollection<FirewallWASRule>.Clear() {
+            lock (mutex) {
+                Clear();
+            }
+        }
+
+        bool ICollection<FirewallWASRule>.Remove(FirewallWASRule item) {
+            lock (mutex) {
+                return Remove(item);
             }
         }
 
