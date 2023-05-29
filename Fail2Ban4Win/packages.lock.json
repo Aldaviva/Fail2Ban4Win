@@ -10,9 +10,9 @@
       },
       "IPNetwork2": {
         "type": "Direct",
-        "requested": "[2.6.564, )",
-        "resolved": "2.6.564",
-        "contentHash": "EUHPr6uBqOT7vvPnaMmLfi/jT48cighQwYhVBRNSyfQBW075GLah3Zd23WxIa0Bk/e92tklmqtavSOV33TPTDg=="
+        "requested": "[2.6.573, )",
+        "resolved": "2.6.573",
+        "contentHash": "u1snbHIym7+BvD4oxfx0djPwlvk2Xxt5B3gH4bylKp6RQw5uyUP6N6TMxBOojyZZFd1nw5dzm+HjG8xbgRZf/A=="
       },
       "LightInject": {
         "type": "Direct",
@@ -47,9 +47,9 @@
       },
       "NLog": {
         "type": "Direct",
-        "requested": "[5.1.4, )",
-        "resolved": "5.1.4",
-        "contentHash": "Ki0XThITEd//RrQ21yi1HB/Uid4pzTRE5YLvEpk91d0vDXp3OPtVCvWgrYsqqcpTwiipFSOLSsU1RblaexrFiA=="
+        "requested": "[5.1.5, )",
+        "resolved": "5.1.5",
+        "contentHash": "ZITyL6pD8f7w6ahHoP7DC4KpsyZMVuSsP7lmMo9WOYg/65/yEqpCteEOWI9lOIqJB2i8/obIj1ivIAOiMt4+eg=="
       },
       "WindowsFirewallHelper": {
         "type": "Direct",
@@ -224,6 +224,24 @@
       }
     },
     ".NETFramework,Version=v4.8/win": {
+      "System.Security.Cryptography.Algorithms": {
+        "type": "Transitive",
+        "resolved": "4.3.1",
+        "contentHash": "DVUblnRfnarrI5olEC2B/OCsJQd0anjVaObQMndHSc43efbc88/RMOlDyg/EyY0ix5ecyZMXS8zMksb5ukebZA==",
+        "dependencies": {
+          "System.IO": "4.3.0",
+          "System.Runtime": "4.3.0",
+          "System.Security.Cryptography.Encoding": "4.3.0",
+          "System.Security.Cryptography.Primitives": "4.3.0"
+        }
+      },
+      "System.Security.Cryptography.Encoding": {
+        "type": "Transitive",
+        "resolved": "4.3.0",
+        "contentHash": "1DEWjZZly9ae9C79vFwqaO5kaOlI5q+3/55ohmq/7dpDyDfc8lYe7YVxJUZ5MF/NtbkRjwFRo14yM4OEo9EmDw=="
+      }
+    },
+    ".NETFramework,Version=v4.8/win-arm64": {
       "System.Security.Cryptography.Algorithms": {
         "type": "Transitive",
         "resolved": "4.3.1",
