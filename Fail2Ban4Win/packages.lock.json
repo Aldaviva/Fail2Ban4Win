@@ -10,9 +10,9 @@
       },
       "IPNetwork2": {
         "type": "Direct",
-        "requested": "[2.6.589, )",
-        "resolved": "2.6.589",
-        "contentHash": "uRYzoXBVoYJiyKa2b9Xeu+7DGlvIDSaQjBvocZBf9VRmsm8UqzxL/l4OrFArGF0/q0qe3dzWSFVGKjVI3XWOLA=="
+        "requested": "[2.6.593, )",
+        "resolved": "2.6.593",
+        "contentHash": "sBc/jnQnrtuIt/OGuCnA1zdFUZpzlxwoCFBfC49q2CHFOxflZsiw6J0bVuDErsS1QkS1dYriEMKeuD51iCY2SQ=="
       },
       "LightInject": {
         "type": "Direct",

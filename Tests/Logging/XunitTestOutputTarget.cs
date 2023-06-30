@@ -3,7 +3,7 @@ using NLog.Config;
 using NLog.Targets;
 using Xunit.Abstractions;
 
-namespace Tests.Logging; 
+namespace Tests.Logging;
 
 [Target("xUnit")]
 public class XunitTestOutputTarget: TargetWithLayout {
@@ -17,7 +17,7 @@ public class XunitTestOutputTarget: TargetWithLayout {
     }
 
     public static void start(ITestOutputHelper testOutputHelper) {
-        SimpleConfigurator.ConfigureForTargetLogging(new XunitTestOutputTarget { testOutputHelper = testOutputHelper }, LogLevel.Trace);
+        LogManager.Setup().LoadConfiguration(builder => builder.ForLogger(LogLevel.Trace).WriteTo(new XunitTestOutputTarget { testOutputHelper = testOutputHelper }));
     }
 
 }

@@ -63,9 +63,9 @@ public class BanManagerTest: IDisposable {
     }
 
     [Fact]
-    public void dontBanReservedAddress() {
+    public void dontBanReservedAddressByDefault() {
         IPAddress reservedAddress = IPAddress.Parse("192.168.1.1");
-        for (int i = 0; i < MAX_ALLOWED_FAILURES; i++) {
+        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
             eventLogListener.failure += Raise.With(null, reservedAddress);
         }
 
@@ -73,9 +73,33 @@ public class BanManagerTest: IDisposable {
     }
 
     [Fact]
+    public void dontBanReservedAddressWhenConfigured() {
+        configuration.neverBanReservedSubnets = true;
+
+        IPAddress reservedAddress = IPAddress.Parse("192.168.1.1");
+        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+            eventLogListener.failure += Raise.With(null, reservedAddress);
+        }
+
+        Assert.Empty(firewallRules);
+    }
+
+    [Fact]
+    public void banReservedAddressWhenConfigured() {
+        configuration.neverBanReservedSubnets = false;
+
+        IPAddress reservedAddress = IPAddress.Parse("192.168.1.1");
+        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+            eventLogListener.failure += Raise.With(null, reservedAddress);
+        }
+
+        Assert.NotEmpty(firewallRules);
+    }
+
+    [Fact]
     public void dontBanLoopbackAddress() {
         IPAddress reservedAddress = IPAddress.Parse("127.0.0.1");
-        for (int i = 0; i < MAX_ALLOWED_FAILURES; i++) {
+        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
             eventLogListener.failure += Raise.With(null, reservedAddress);
         }
 
@@ -85,7 +109,7 @@ public class BanManagerTest: IDisposable {
     [Fact]
     public void dontBanWhitelistedAddress() {
         IPAddress reservedAddress = IPAddress.Parse("73.202.12.148");
-        for (int i = 0; i < MAX_ALLOWED_FAILURES; i++) {
+        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
             eventLogListener.failure += Raise.With(null, reservedAddress);
         }
 

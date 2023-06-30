@@ -82,8 +82,9 @@ public class BanManagerImpl: BanManager {
 
     // this runs inside a lock on the SubnetFailureHistory
     private bool shouldBan(IPNetwork subnet, SubnetFailureHistory clientFailureHistory) {
-        if (subnet.IsIANAReserved()) {
-            LOGGER.Debug("Not banning {0} because it is contained in an IANA-reserved block such as {1}", subnet, IPNetwork.IANA_CBLK_RESERVED1);
+        if (subnet.IsIANAReserved() && configuration.neverBanReservedSubnets) {
+            LOGGER.Debug("Not banning {0} because it is contained in an IANA-reserved block such as {1}. To ban anyway, set \"{2}\" to false.", subnet, IPNetwork.IANA_CBLK_RESERVED1,
+                nameof(configuration.neverBanReservedSubnets));
             return false;
         }
 
@@ -94,7 +95,8 @@ public class BanManagerImpl: BanManager {
 
         IPNetwork? neverBanSubnet = configuration.neverBanSubnets?.FirstOrDefault(neverBan => neverBan.Overlap(subnet));
         if (neverBanSubnet is not null) {
-            LOGGER.Debug("Not banning {0} because it overlaps the {2} subnet in the \"neverBanSubnets\" values in {1}", subnet, ConfigurationModule.CONFIGURATION_FILENAME, neverBanSubnet);
+            LOGGER.Debug("Not banning {0} because it overlaps the {2} subnet in the \"{3}\" values in {1}", subnet, ConfigurationModule.CONFIGURATION_FILENAME, neverBanSubnet,
+                nameof(configuration.neverBanSubnets));
             return false;
         }
 
@@ -106,7 +108,7 @@ public class BanManagerImpl: BanManager {
         }
 
         if (firewall.Rules.Any(isBanRule(subnet))) {
-            LOGGER.Debug("Not banning {0} because it is already banned. This is likely caused by receiving many failed requests before our first firewall rule took effect", subnet);
+            LOGGER.Debug("Not banning {0} because it is already banned. This is likely caused by receiving many failed requests before our first firewall rule took effect.", subnet);
             return false;
         }
 

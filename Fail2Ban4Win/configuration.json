@@ -11,6 +11,7 @@
 		"67.210.32.33/32",
 		"73.202.12.148/32"
 	],
+	"neverBanReservedSubnets": true,
 	"eventLogSelectors": [
 		{
 			"logName": "Security",

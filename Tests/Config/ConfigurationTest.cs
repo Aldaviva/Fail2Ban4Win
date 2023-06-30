@@ -40,6 +40,7 @@ public class ConfigurationTest: IDisposable {
                     "67.210.32.33",
                     "73.202.12.148"
                 ],
+                "neverBanReservedSubnets": false,
             	"eventLogSelectors": [
             		{
             			"logName": "Security",
@@ -64,7 +65,7 @@ public class ConfigurationTest: IDisposable {
 
     [Fact]
     public void parse() {
-        File.WriteAllText("configuration.json", JSON, Encoding.UTF8);
+        File.WriteAllText("configuration.json", JSON, new UTF8Encoding(false, true));
         testOutputHelper.WriteLine("Wrote {0}", Path.GetFullPath("configuration.json"));
 
         using ServiceContainer context = new();
@@ -85,6 +86,7 @@ public class ConfigurationTest: IDisposable {
         Assert.Contains(IPNetwork.Parse("192.168.1.0/24"), actual.neverBanSubnets!);
         Assert.Contains(IPNetwork.Parse("67.210.32.33/32"), actual.neverBanSubnets!);
         Assert.Contains(IPNetwork.Parse("73.202.12.148/32"), actual.neverBanSubnets!);
+        Assert.False(actual.neverBanReservedSubnets);
         Assert.NotNull(actual.ToString());
 
         EventLogSelector[] actualSelectors = actual.eventLogSelectors.ToArray();
