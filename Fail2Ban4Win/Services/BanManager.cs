@@ -139,7 +139,7 @@ public class BanManagerImpl: BanManager {
             .ContinueWith(result => LOGGER.Error(result.Exception, "Exception unbanning subnet {0}", subnet), cancellationTokenSource.Token, TaskContinuationOptions.OnlyOnFaulted,
                 TaskScheduler.Current);
 
-        LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:O} (in {2:g})", subnet, now + unbanDuration, configuration.banPeriod);
+        LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:O} (in {2:g})", subnet, now + unbanDuration, unbanDuration);
 
         if (!configuration.isDryRun) {
             clientFailureHistory.clearFailures();

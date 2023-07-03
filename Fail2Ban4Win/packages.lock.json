@@ -47,9 +47,9 @@
       },
       "NLog": {
         "type": "Direct",
-        "requested": "[5.2.0, )",
-        "resolved": "5.2.0",
-        "contentHash": "uYBgseY0m/9lQUbZYGsQsTBFOWrfs3iaekzzYMH6vFmpoOAvV8/bp1XxG/suZkwB5h8nAiTJAp7VENWRDKtKPA=="
+        "requested": "[5.2.1, )",
+        "resolved": "5.2.1",
+        "contentHash": "8H679iScYqXuas/f5CQ/JNRsqui/ENmk4XKWGFpGLomoASRl0vcOkQits01Iquc2ShB52wjjci3LVE8IUnFbxw=="
       },
       "WindowsFirewallHelper": {
         "type": "Direct",
