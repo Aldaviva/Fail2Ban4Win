@@ -74,7 +74,12 @@ public class EventLogQueryFacade: EventLogQuery {
 
 public class EventRecordWrittenEventArgsFacade {
 
+    /// <summary>
+    /// The EventRecord being notified.
+    /// NOTE: If non null, then caller is required to call Dispose().
+    /// </summary>
     public EventLogRecordFacade? EventRecord { get; }
+
     public Exception? EventException { get; }
 
     public EventRecordWrittenEventArgsFacade(EventLogRecordFacade eventRecord) {
