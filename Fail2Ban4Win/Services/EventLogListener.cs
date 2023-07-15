@@ -42,7 +42,9 @@ public class EventLogListenerImpl: EventLogListener {
             EventLogWatcherFacade watcher = eventLogWatcherFacadeFactory(new EventLogQueryFacade(selector.logName, PathType.LogName, selectorToQuery(selector)));
             watcher.EventRecordWritten += (_, args) => {
                 if (args.EventRecord is { } record) {
-                    onEventRecordWritten(record, selector);
+                    using (record) {
+                        onEventRecordWritten(record, selector);
+                    }
                 }
             };
 

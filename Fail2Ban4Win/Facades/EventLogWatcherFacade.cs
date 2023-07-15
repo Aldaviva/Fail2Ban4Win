@@ -7,7 +7,7 @@ using System.Linq;
 
 // ReSharper disable InconsistentNaming
 
-namespace Fail2Ban4Win.Facades; 
+namespace Fail2Ban4Win.Facades;
 
 public interface EventLogWatcherFacade: IDisposable {
 
@@ -95,7 +95,7 @@ public class EventRecordWrittenEventArgsFacade {
 
 }
 
-public interface EventLogRecordFacade {
+public interface EventLogRecordFacade: IDisposable {
 
     string LogName { get; }
     int Id { get; }
@@ -123,6 +123,10 @@ public class EventLogRecordFacadeImpl: EventLogRecordFacade {
     }
 
     public IList<EventPropertyFacade> Properties => record.Properties.Select(property => new EventPropertyFacade(property)).ToList();
+
+    public void Dispose() {
+        record.Dispose();
+    }
 
 }
 
