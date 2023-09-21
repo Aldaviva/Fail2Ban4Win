@@ -9,10 +9,15 @@ using System.Linq;
 
 namespace Fail2Ban4Win.Facades;
 
+/// <inheritdoc cref="EventLogWatcher"/>
 public interface EventLogWatcherFacade: IDisposable {
 
+    /// <inheritdoc cref="EventLogWatcher.EventRecordWritten"/>
     event EventHandler<EventRecordWrittenEventArgsFacade> EventRecordWritten;
 
+    /// <inheritdoc cref="EventLogWatcher.Enabled"/>
+    /// <exception cref="EventLogNotFoundException">if the given event log does not exist</exception>
+    /// <exception cref="UnauthorizedAccessException">if the given event log does not exist and this process does not have permissions to create it</exception>
     bool Enabled { get; set; }
 
 }
@@ -36,10 +41,13 @@ public class EventLogWatcherFacadeImpl: EventLogWatcherFacade {
         watcher.EventRecordWritten += WatcherOnEventRecordWritten;
     }
 
+    /// <inheritdoc cref="EventLogWatcher(EventLogQuery)"/>
     public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery): this(new EventLogWatcher(eventQuery)) { }
 
+    /// <inheritdoc cref="EventLogWatcher(EventLogQuery, EventBookmark)"/>
     public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery, EventBookmark bookmark): this(new EventLogWatcher(eventQuery, bookmark)) { }
 
+    /// <inheritdoc cref="EventLogWatcher(EventLogQuery, EventBookmark, bool)"/>
     public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery, EventBookmark bookmark, bool readExistingEvents): this(new EventLogWatcher(eventQuery, bookmark, readExistingEvents)) { }
 
     private void WatcherOnEventRecordWritten(object sender, EventRecordWrittenEventArgs e) {
@@ -53,17 +61,20 @@ public class EventLogWatcherFacadeImpl: EventLogWatcherFacade {
 
 }
 
+/// <inheritdoc cref="EventLogQuery"/>
 public class EventLogQueryFacade: EventLogQuery {
 
     public string path { get; }
     public PathType pathType { get; }
     public string? query { get; }
 
+    /// <inheritdoc cref="EventLogQuery(string, PathType)"/>
     public EventLogQueryFacade(string path, PathType pathType): base(path, pathType) {
         this.path     = path;
         this.pathType = pathType;
     }
 
+    /// <inheritdoc cref="EventLogQuery(string, PathType, string)"/>
     public EventLogQueryFacade(string path, PathType pathType, string query): base(path, pathType, query) {
         this.path     = path;
         this.pathType = pathType;
@@ -100,13 +111,25 @@ public class EventRecordWrittenEventArgsFacade {
 
 }
 
+/// <inheritdoc cref="EventLogRecord"/>
 public interface EventLogRecordFacade: IDisposable {
 
+    /// <inheritdoc cref="EventLogRecord.LogName"/>
     string LogName { get; }
+
+    /// <inheritdoc cref="EventLogRecord.Id"/>
     int Id { get; }
+
+    /// <inheritdoc cref="EventLogRecord.RecordId"/>
+    long? RecordId { get; }
+
+    /// <inheritdoc cref="EventLogRecord.ProviderName"/>
     string ProviderName { get; }
+
+    /// <inheritdoc cref="EventLogRecord.Properties"/>
     IList<EventPropertyFacade> Properties { get; }
 
+    /// <inheritdoc cref="EventLogRecord.GetPropertyValues"/>
     IList<object> GetPropertyValues(EventLogPropertySelectorFacade propertySelector);
 
 }
@@ -117,6 +140,7 @@ public class EventLogRecordFacadeImpl: EventLogRecordFacade {
 
     public string LogName => record.LogName;
     public int Id => record.Id;
+    public long? RecordId => record.RecordId;
     public string ProviderName => record.ProviderName;
 
     public EventLogRecordFacadeImpl(EventLogRecord record) {
@@ -135,8 +159,10 @@ public class EventLogRecordFacadeImpl: EventLogRecordFacade {
 
 }
 
+/// <inheritdoc cref="EventProperty"/>
 public class EventPropertyFacade {
 
+    /// <inheritdoc cref="EventProperty.Value"/>
     public object Value { get; }
 
     public EventPropertyFacade(object value) {
@@ -147,14 +173,17 @@ public class EventPropertyFacade {
 
 }
 
+/// <inheritdoc cref="EventLogPropertySelector"/>
 public class EventLogPropertySelectorFacade: EventLogPropertySelector {
 
     public IEnumerable<string> propertyQueries { get; }
 
+    /// <inheritdoc cref="EventLogPropertySelector(IEnumerable&lt;string&gt;)"/>
     private EventLogPropertySelectorFacade(ICollection<string> propertyQueries): base(propertyQueries) {
         this.propertyQueries = propertyQueries;
     }
 
+    /// <inheritdoc cref="EventLogPropertySelector(IEnumerable&lt;string&gt;)"/>
     public EventLogPropertySelectorFacade(IEnumerable<string> propertyQueries): this((ICollection<string>) propertyQueries) { }
 
 }

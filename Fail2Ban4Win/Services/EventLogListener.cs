@@ -25,7 +25,8 @@ public class EventLogListenerImpl: EventLogListener {
 
     private static readonly Logger LOGGER = LogManager.GetLogger(nameof(EventLogListenerImpl));
 
-    private static readonly Regex DEFAULT_IPV4_ADDRESS_PATTERN = new(@"(?<ipAddress>\b(?:(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\.){3}(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\b)");
+    private static readonly Regex DEFAULT_IPV4_ADDRESS_PATTERN = new(@"(?<ipAddress>\b(?:(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\.){3}(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\b)",
+        RegexOptions.None, RegexDeserializer.MATCH_TIMEOUT);
 
     public event EventHandler<IPAddress>? failure;
 
@@ -41,10 +42,9 @@ public class EventLogListenerImpl: EventLogListener {
 
             EventLogWatcherFacade watcher = eventLogWatcherFacadeFactory(new EventLogQueryFacade(selector.logName, PathType.LogName, selectorToQuery(selector)));
             watcher.EventRecordWritten += (_, args) => {
-                if (args.EventRecord is { } record) {
-                    using (record) {
-                        onEventRecordWritten(record, selector);
-                    }
+                using EventLogRecordFacade? record = args.EventRecord;
+                if (record != null) {
+                    onEventRecordWritten(record, selector);
                 }
             };
 
@@ -77,16 +77,20 @@ public class EventLogListenerImpl: EventLogListener {
 
         if (stringContainingIpAddress is not null) {
             LOGGER.Trace("Searching for IPv4 address in {0}", stringContainingIpAddress);
+            try {
+                MatchCollection matchCollection = (selector.ipAddressPattern ?? DEFAULT_IPV4_ADDRESS_PATTERN).Matches(stringContainingIpAddress);
 
-            MatchCollection matchCollection = (selector.ipAddressPattern ?? DEFAULT_IPV4_ADDRESS_PATTERN).Matches(stringContainingIpAddress);
+                if (matchCollection.Count > 0) {
+                    IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>().Select(match => IPAddress.Parse(match.Groups["ipAddress"].Value));
 
-            if (matchCollection.Count > 0) {
-                IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>().Select(match => IPAddress.Parse(match.Groups["ipAddress"].Value));
-
-                foreach (IPAddress failingIpAddress in failingIpAddresses) {
-                    LOGGER.Info("Authentication failure detected from {0} (log={1}, event={2}, source={3})", failingIpAddress, record.LogName, record.Id, record.ProviderName);
-                    failure?.Invoke(this, failingIpAddress);
+                    foreach (IPAddress failingIpAddress in failingIpAddresses) {
+                        LOGGER.Info("Authentication failure detected from {0} (log={1}, event={2}, source={3})", failingIpAddress, record.LogName, record.Id, record.ProviderName);
+                        failure?.Invoke(this, failingIpAddress);
+                    }
                 }
+            } catch (RegexMatchTimeoutException) {
+                LOGGER.Warn("Searching for IP address in event {0} with ID {1} from {2} source of {3} log took more than {4:g}, ignoring this event.",
+                    record.RecordId, record.Id, record.ProviderName, record.LogName, RegexDeserializer.MATCH_TIMEOUT);
             }
         }
     }
