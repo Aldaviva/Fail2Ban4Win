@@ -64,7 +64,7 @@ You can [customize](#configuration) most of the above specifics.
 ### Upgrade
 1. Download the [latest release](https://github.com/Aldaviva/Fail2Ban4Win/releases) ZIP file (`Fail2Ban4Win.zip`).
 1. Extract `Fail2Ban4Win.exe` from the ZIP file to the installation directory.
-1. Restart the service using `services.msc`, `Restart-Service Fail2Ban4Win`, or `net stop Fail2Ban4Win & net start Fail2Ban4Win`.
+1. Restart the service using `services.msc` (GUI), `Restart-Service Fail2Ban4Win` (PowerShell), or `net stop Fail2Ban4Win & net start Fail2Ban4Win` (Command Prompt).
 
 <a id="configuration"></a>
 ## Configuration
@@ -87,7 +87,7 @@ Be aware that `isDryRun` defaults to `true` to avoid accidentally blocking traff
     |`neverBanSubnets`|`[]`|Optional whitelist of IP ranges that should never be banned, regardless of how many auth failures they generate. Each item can be a single IP address, like `67.210.32.33`, or a range, like `67.210.32.0/24`.|
     |`neverBanReservedSubnets`|`true`|By default, IP addresses in the reserved blocks `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16` will not be banned, to avoid unintentionally blocking LAN access. To allow all three ranges to be banned, change this to `false`. To then selectively prevent some of those ranges from getting banned, you may add them to the `neverBanSubnets` list above. Regardless of this configuration, the loopback address will never be banned.|
     |`eventLogSelectors`|`[]`|Required list of events to listen for in Event Log. Each object in the list can have the following properties.<ul><li>`logName`: required, which log in Event Viewer contains the events, _e.g._ `Application`, `Security`, `OpenSSH/Operational`.</li><li>`eventId`: required, numeric ID of event logged on auth failure, _e.g._ `4625` for RDP auth errors.</li><li>`source`: optional Source, AKA Provider Name, of events, _e.g._ `sshd` for Cygwin OpenSSH sshd. If omitted, events will not be filtered by Source.</li><li>`ipAddressEventDataName`: optional, the `Name` of the `Data` element in the event XML's `EventData` in which to search for the client IP address of the auth request, _e.g._ `IpAddress` for RDP. If omitted, the first `Data` element will be searched instead.</li><li>`ipAddressEventDataIndex`: optional, the 0-indexed offset of the `Data` element in the XML's `EventData` in which to search for the client IP address, _e.g._ `3` to search for IP addresses in the fourth `Data` element in `EventData`. Useful if `EventData` has multiple `Data` children, but none of them have a `Name` attribute to specify in `ipAddressEventDataName`, and the IP address doesn't appear in the first one. This offset is applied after any `Name` attribute filtering, and applies whether or not `ipAddressEventDataName` is specified. If omitted, defaults to `0`.</li><li>`ipAddressPattern`: optional, regular expression pattern string that matches the IP address in the `Data` element specified above. Useful if you want to filter out some events from the log with the desired ID and source but that don't describe an auth failure (_e.g._ sshd's disconnect events). If omitted, searches for all IPv4 addresses in the `Data` element's text content. To set [options like case-insensitivity](https://docs.microsoft.com/en-us/dotnet/standard/base-types/miscellaneous-constructs-in-regular-expressions), put `(?i)` at the start of the pattern. Patterns are not anchored to the entire input string unless you surround them with `^` and `$`. If you specify a pattern, ensure the desired IPv4 capture group in your pattern has the name `ipAddress`, _e.g._ <pre lang="regex">Failed: (?&lt;ipAddress&gt;(?:\d{1,3}\\.){3}\d{1,3})</pre></li></ul>See [Handling a new event](#handling-a-new-event) below for a tutorial on creating this object.|
-1. After saving the configuration file, restart the Fail2Ban4Win service for your changes to take effect. Note that the service will clear existing bans when it starts.
+1. After saving the configuration file, restart the Fail2Ban4Win service using `services.msc` (GUI), `Restart-Service Fail2Ban4Win` (PowerShell), or `net stop Fail2Ban4Win & net start Fail2Ban4Win` (Command Prompt) for your changes to take effect. Note that the service will clear existing bans when it starts.
 
 <a id="handling-a-new-event"></a>
 ### Handling a new event
@@ -132,7 +132,7 @@ In this example, we will go through the process of creating an event for Windows
 <a id="running"></a>
 ## Running
 Do any of the following.
-- Start the `Fail2Ban4Win` service from `services.msc`.
+- Start the `Fail2Ban4Win` service from the `services.msc` GUI.
 - Start the service from PowerShell using `Start-Service Fail2Ban4Win`.
 - Start the service from Command Prompt using `net start Fail2Ban4Win`.
 - Run the service in the foreground by starting `Fail2Ban4Win.exe` in a console window. This is useful for looking at the log output and verifying your configuration, especially when `isDryRun` is true. You can stop the process using `Ctrl`+`C`.
@@ -143,6 +143,7 @@ You can see the block rules created by Fail2Ban4Win in Windows Firewall.
 1. Start Windows Firewall with Advanced Security (`wf.msc`).
 1. Go to `Inbound Rules`.
 1. To only show rules created by Fail2Ban4Win, select Action › Filter by Group › Filter by Fail2Ban4Win.
+    - If Fail2Ban4Win has not created any rules yet (for example, if it started running recently), the Filter by Fail2Ban4Win option will not appear in the Filter by Group menu. Click Refresh to update the collection of rules and groups.
 1. To sort by creation time, select View › Add/Remove Columns and Add the Description column, then click the Description column header.
 
 ![Windows Firewall with Advanced Security filtering by Fail2Ban4Win rules](https://i.imgur.com/pW12vKL.png)
@@ -153,4 +154,5 @@ You can see the block rules created by Fail2Ban4Win in Windows Firewall.
 - A vague awareness of the existence of [`fail2ban`](https://www.fail2ban.org) that convinced me that non-stop RDP and SSH login attempts might have a solution.
 - [`wail2ban` by Katie McLaughlin (`glasnt`)](https://github.com/glasnt/wail2ban) for being archived and motivating me to creating my own non-archived implementation.
 - [`win2ban`](https://itefix.net/win2ban) for charging twenty-nine American dollars for some cobbled together free open-source projects that made me indignant enough to create my own free, open-source, clean-room implementation.
+- [Soroush (`falahati`)](https://github.com/falahati/WindowsFirewallHelper) for the excellent .NET wrapper for the Windows Firewall COM API.
 - [Robert Mustacchi (`rmustacc`)](https://github.com/rmustacc) for talking me out of trying to implement a wait-free list to store failure times and instead continuing to lock array lists.
