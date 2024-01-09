@@ -32,7 +32,7 @@ You can customize the duration of the ban, the type of Event Log events to detec
 1. Fail2Ban4Win keeps track of how many times each subnet has triggered auth failures over the last 24 hours.
 1. When a given subnet has failed to authenticate 10 times in the last 24 hours, a Windows Firewall rule is created to block incoming traffic from that subnet on all ports.
 1. After being banned for 1 day, the firewall rule is deleted and the subnet is allowed to fail 10 more times before being banned a second time.
-1. Each time a subnet is repeatedly banned, the ban duration increases by 1 day, up to a maximum of a four day ban, after which each subsequent ban will always be 4 days.
+1. Each time a subnet is repeatedly banned, the ban duration increases by 1 day, up to a maximum of a 4 day ban, after which each subsequent ban will always be 4 days.
 1. When Fail2Ban4Win restarts, it deletes all firewall rules it created and starts from scratch. This allows it to fail open and avoids persisting the failure history.
 
 You can [customize](#configuration) most of the above specifics.
