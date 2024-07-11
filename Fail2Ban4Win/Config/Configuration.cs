@@ -1,11 +1,11 @@
 ﻿#nullable enable
 
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
-using NLog;
 
 namespace Fail2Ban4Win.Config;
 
@@ -19,12 +19,12 @@ public class Configuration: ICloneable {
     public double? banRepeatedOffenseCoefficient { get; set; }
     public int? banRepeatedOffenseMax { get; set; }
     public LogLevel? logLevel { get; set; }
-    public ICollection<IPNetwork>? neverBanSubnets { get; set; }
+    public ICollection<IPNetwork2>? neverBanSubnets { get; set; }
     public bool neverBanReservedSubnets { get; set; } = true;
     public ICollection<EventLogSelector> eventLogSelectors { get; set; } = null!;
 
     public override string ToString() =>
-        $"{nameof(maxAllowedFailures)}: {maxAllowedFailures}, {nameof(failureWindow)}: {failureWindow}, {nameof(banPeriod)}: {banPeriod}, {nameof(banSubnetBits)}: {banSubnetBits}, {nameof(banRepeatedOffenseCoefficient)}: {banRepeatedOffenseCoefficient}, {nameof(banRepeatedOffenseMax)}: {banRepeatedOffenseMax}, {nameof(neverBanSubnets)}: [{{{string.Join("}, {", neverBanSubnets ?? Array.Empty<IPNetwork>())}}}], {nameof(eventLogSelectors)}: [{{{string.Join("}, {", eventLogSelectors)}}}], {nameof(isDryRun)}: {isDryRun}, {nameof(logLevel)}: {logLevel}";
+        $"{nameof(maxAllowedFailures)}: {maxAllowedFailures}, {nameof(failureWindow)}: {failureWindow}, {nameof(banPeriod)}: {banPeriod}, {nameof(banSubnetBits)}: {banSubnetBits}, {nameof(banRepeatedOffenseCoefficient)}: {banRepeatedOffenseCoefficient}, {nameof(banRepeatedOffenseMax)}: {banRepeatedOffenseMax}, {nameof(neverBanSubnets)}: [{{{string.Join("}, {", neverBanSubnets ?? Array.Empty<IPNetwork2>())}}}], {nameof(eventLogSelectors)}: [{{{string.Join("}, {", eventLogSelectors)}}}], {nameof(isDryRun)}: {isDryRun}, {nameof(logLevel)}: {logLevel}";
 
     public object Clone() => new Configuration {
         isDryRun                      = isDryRun,
@@ -35,7 +35,7 @@ public class Configuration: ICloneable {
         banRepeatedOffenseCoefficient = banRepeatedOffenseCoefficient,
         banRepeatedOffenseMax         = banRepeatedOffenseMax,
         logLevel                      = logLevel,
-        neverBanSubnets               = neverBanSubnets is not null ? new List<IPNetwork>(neverBanSubnets) : null,
+        neverBanSubnets               = neverBanSubnets is not null ? new List<IPNetwork2>(neverBanSubnets) : null,
         eventLogSelectors             = eventLogSelectors.Select(selector => (EventLogSelector) selector.Clone()).ToList()
     };
 

@@ -1,16 +1,16 @@
 ﻿#nullable enable
 
+using Fail2Ban4Win.Config;
+using Fail2Ban4Win.Facades;
+using Fail2Ban4Win.Services;
+using FakeItEasy;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
-using Fail2Ban4Win.Config;
-using Fail2Ban4Win.Facades;
-using Fail2Ban4Win.Services;
-using FakeItEasy;
-using NLog;
 using Tests.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -26,7 +26,7 @@ public class EventLogListenerTest: IDisposable {
         banSubnetBits      = 8,
         logLevel           = LogLevel.Trace,
         maxAllowedFailures = 2,
-        neverBanSubnets    = new[] { IPNetwork.Parse("73.202.12.148/32") },
+        neverBanSubnets    = new[] { IPNetwork2.Parse("73.202.12.148/32") },
         eventLogSelectors = new[] {
             new EventLogSelector {
                 logName                = "Security",

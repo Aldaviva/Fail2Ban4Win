@@ -1,5 +1,9 @@
 ﻿#nullable enable
 
+using Fail2Ban4Win.Config;
+using Fail2Ban4Win.Data;
+using Fail2Ban4Win.Facades;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -8,10 +12,6 @@ using System.Net;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
-using Fail2Ban4Win.Config;
-using Fail2Ban4Win.Data;
-using Fail2Ban4Win.Facades;
-using NLog;
 
 namespace Fail2Ban4Win.Services;
 
@@ -72,7 +72,7 @@ public class EventLogListenerImpl: EventLogListener {
 
         string? stringContainingIpAddress = selector.ipAddressEventDataName is null
             ? record.Properties.ElementAtOrDefault(selector.ipAddressEventDataIndex)?.Value as string
-            : record.GetPropertyValues(new EventLogPropertySelectorFacade(new[] { $"Event/EventData/Data[@Name=\"{SecurityElement.Escape(selector.ipAddressEventDataName)}\"]" }))
+            : record.GetPropertyValues(new EventLogPropertySelectorFacade([$"Event/EventData/Data[@Name=\"{SecurityElement.Escape(selector.ipAddressEventDataName)}\"]"]))
                 .ElementAtOrDefault(selector.ipAddressEventDataIndex) as string;
 
         if (stringContainingIpAddress is not null) {

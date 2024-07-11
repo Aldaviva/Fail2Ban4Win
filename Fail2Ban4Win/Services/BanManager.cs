@@ -1,5 +1,10 @@
 ﻿#nullable enable
 
+using Fail2Ban4Win.Config;
+using Fail2Ban4Win.Data;
+using Fail2Ban4Win.Facades;
+using Fail2Ban4Win.Injection;
+using NLog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,11 +13,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Fail2Ban4Win.Config;
-using Fail2Ban4Win.Data;
-using Fail2Ban4Win.Facades;
-using Fail2Ban4Win.Injection;
-using NLog;
 using WindowsFirewallHelper;
 using WindowsFirewallHelper.Addresses;
 using WindowsFirewallHelper.FirewallRules;
@@ -28,23 +28,23 @@ public class BanManagerImpl: BanManager {
     private const FirewallProfiles ALL_PROFILES = FirewallProfiles.Domain | FirewallProfiles.Private | FirewallProfiles.Public;
     private const string           GROUP_NAME   = "Fail2Ban4Win";
 
-    private static readonly IPNetwork LOOPBACK = IPNetwork.Parse(IPAddress.Loopback, IPNetwork.ToNetmask(8, AddressFamily.InterNetwork));
+    private static readonly IPNetwork2 LOOPBACK = IPNetwork2.Parse(IPAddress.Loopback, IPNetwork2.ToNetmask(8, AddressFamily.InterNetwork));
 
     private readonly EventLogListener eventLogListener;
     private readonly Configuration    configuration;
     private readonly FirewallFacade   firewall;
     private readonly IPAddress        subnetMask;
 
-    private readonly ConcurrentDictionary<IPNetwork, SubnetFailureHistory> failures                = new();
-    private readonly CancellationTokenSource                               cancellationTokenSource = new();
-    private readonly ManualResetEventSlim                                  initialRuleDeletionDone = new(false);
+    private readonly ConcurrentDictionary<IPNetwork2, SubnetFailureHistory> failures                = new();
+    private readonly CancellationTokenSource                                cancellationTokenSource = new();
+    private readonly ManualResetEventSlim                                   initialRuleDeletionDone = new(false);
 
     public BanManagerImpl(EventLogListener eventLogListener, Configuration configuration, FirewallFacade firewall) {
         this.eventLogListener = eventLogListener;
         this.configuration    = configuration;
         this.firewall         = firewall;
 
-        subnetMask = IPNetwork.ToNetmask((byte) (32 - (this.configuration.banSubnetBits ?? 0)), AddressFamily.InterNetwork);
+        subnetMask = IPNetwork2.ToNetmask((byte) (32 - (this.configuration.banSubnetBits ?? 0)), AddressFamily.InterNetwork);
 
         eventLogListener.failure += onFailure;
 
@@ -68,7 +68,7 @@ public class BanManagerImpl: BanManager {
     }
 
     private void onFailure(object sender, IPAddress ipAddress) {
-        IPNetwork subnet = IPNetwork.Parse(ipAddress, subnetMask);
+        IPNetwork2 subnet = IPNetwork2.Parse(ipAddress, subnetMask);
 
         SubnetFailureHistory failuresForSubnet = failures.GetOrAdd(subnet, _ => new ArrayListSubnetFailureHistory(configuration.maxAllowedFailures));
         lock (failuresForSubnet) {
@@ -81,9 +81,9 @@ public class BanManagerImpl: BanManager {
     }
 
     // this runs inside a lock on the SubnetFailureHistory
-    private bool shouldBan(IPNetwork subnet, SubnetFailureHistory clientFailureHistory) {
+    private bool shouldBan(IPNetwork2 subnet, SubnetFailureHistory clientFailureHistory) {
         if (subnet.IsIANAReserved() && configuration.neverBanReservedSubnets) {
-            LOGGER.Debug("Not banning {0} because it is contained in an IANA-reserved block such as {1}. To ban anyway, set \"{2}\" to false.", subnet, IPNetwork.IANA_CBLK_RESERVED1,
+            LOGGER.Debug("Not banning {0} because it is contained in an IANA-reserved block such as {1}. To ban anyway, set \"{2}\" to false.", subnet, IPNetwork2.IANA_CBLK_RESERVED1,
                 nameof(configuration.neverBanReservedSubnets));
             return false;
         }
@@ -93,7 +93,7 @@ public class BanManagerImpl: BanManager {
             return false;
         }
 
-        IPNetwork? neverBanSubnet = configuration.neverBanSubnets?.FirstOrDefault(neverBan => neverBan.Overlap(subnet));
+        IPNetwork2? neverBanSubnet = configuration.neverBanSubnets?.FirstOrDefault(neverBan => neverBan.Overlap(subnet));
         if (neverBanSubnet is not null) {
             LOGGER.Debug("Not banning {0} because it overlaps the {2} subnet in the \"{3}\" values in {1}", subnet, ConfigurationModule.CONFIGURATION_FILENAME, neverBanSubnet,
                 nameof(configuration.neverBanSubnets));
@@ -116,7 +116,7 @@ public class BanManagerImpl: BanManager {
     }
 
     // this runs inside a lock on the SubnetFailureHistory
-    private void ban(IPNetwork subnet, SubnetFailureHistory clientFailureHistory) {
+    private void ban(IPNetwork2 subnet, SubnetFailureHistory clientFailureHistory) {
         clientFailureHistory.banCount++;
 
         initialRuleDeletionDone.Wait(cancellationTokenSource.Token);
@@ -160,7 +160,7 @@ public class BanManagerImpl: BanManager {
             configuration.banPeriod.TotalMilliseconds);
     }
 
-    private void unban(IPNetwork subnet) {
+    private void unban(IPNetwork2 subnet) {
         IEnumerable<FirewallWASRule> rulesToRemove = firewall.Rules.Where(isBanRule(subnet)).ToList(); //eagerly evaluate Where clause to prevent concurrent modification below
         foreach (FirewallWASRule rule in rulesToRemove) {
             LOGGER.Info("Ban has expired on subnet {0}, removing firewall rule {1}", subnet, rule.Name);
@@ -170,12 +170,12 @@ public class BanManagerImpl: BanManager {
         }
     }
 
-    private static Func<FirewallWASRule, bool> isBanRule(IPNetwork? subnet = null) {
+    private static Func<FirewallWASRule, bool> isBanRule(IPNetwork2? subnet = null) {
         string? ruleName = subnet is not null ? getRuleName(subnet) : null;
         return rule => rule.Grouping == GROUP_NAME && (ruleName is null || ruleName == rule.Name);
     }
 
-    private static string getRuleName(IPNetwork ipAddress) => $"Banned {ipAddress}";
+    private static string getRuleName(IPNetwork2 ipAddress) => $"Banned {ipAddress}";
 
     private static Task LongDelay(TimeSpan duration, CancellationToken cancellationToken = default) {
         /*

@@ -1,15 +1,15 @@
 #nullable enable
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading;
 using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Facades;
 using Fail2Ban4Win.Services;
 using FakeItEasy;
 using NLog;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading;
 using Tests.Logging;
 using WindowsFirewallHelper;
 using WindowsFirewallHelper.Addresses;
@@ -39,7 +39,7 @@ public class BanManagerTest: IDisposable {
         banRepeatedOffenseMax         = 4,
         logLevel                      = LogLevel.Trace,
         maxAllowedFailures            = MAX_ALLOWED_FAILURES,
-        neverBanSubnets               = new[] { IPNetwork.Parse("73.202.12.148/32") }
+        neverBanSubnets               = new[] { IPNetwork2.Parse("73.202.12.148/32") }
     };
 
     private readonly FakeFirewallRulesCollection firewallRules  = new();
