@@ -55,7 +55,13 @@ public class ConfigurationTest: IDisposable {
                                             "logName": "Application",
                                             "source": "MSExchangeFrontEndTransport",
                                             "eventId": 1035,
-                                            "ipAddressEventDataIndex": 3
+                                            "ipAddressEventDataIndex": 3,
+                                        }, {
+                                            "logName": "Microsoft-Windows-IIS-Logging/Logs",
+                                            "source": "IIS-Logging",
+                                            "eventId": 6200,
+                                            "ipAddressEventDataName": "c-ip",
+                                            "eventPredicate": "[EventData/Data[@Name='sc-status']=403]"
                                         }
                                 	],
                                     "isDryRun": true,
@@ -90,7 +96,7 @@ public class ConfigurationTest: IDisposable {
         Assert.NotNull(actual.ToString());
 
         EventLogSelector[] actualSelectors = actual.eventLogSelectors.ToArray();
-        Assert.Equal(3, actualSelectors.Length);
+        Assert.Equal(4, actualSelectors.Length);
 
         EventLogSelector rdpSelector = actualSelectors[0];
         Assert.Equal("Security", rdpSelector.logName);
@@ -119,6 +125,13 @@ public class ConfigurationTest: IDisposable {
         Assert.Equal("MSExchangeFrontEndTransport", exchangeFrontendSelector.source);
         Assert.Equal(3, exchangeFrontendSelector.ipAddressEventDataIndex);
         Assert.NotNull(exchangeFrontendSelector.ToString());
+
+        EventLogSelector iisSelector = actualSelectors[3];
+        Assert.Equal("Microsoft-Windows-IIS-Logging/Logs", iisSelector.logName);
+        Assert.Equal("IIS-Logging", iisSelector.source);
+        Assert.Equal(6200, iisSelector.eventId);
+        Assert.Equal("c-ip", iisSelector.ipAddressEventDataName);
+        Assert.Equal("[EventData/Data[@Name='sc-status']=403]", iisSelector.eventPredicate);
     }
 
     public void Dispose() {

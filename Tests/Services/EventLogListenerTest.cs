@@ -26,8 +26,8 @@ public class EventLogListenerTest: IDisposable {
         banSubnetBits      = 8,
         logLevel           = LogLevel.Trace,
         maxAllowedFailures = 2,
-        neverBanSubnets    = new[] { IPNetwork2.Parse("73.202.12.148/32") },
-        eventLogSelectors = new[] {
+        neverBanSubnets    = [IPNetwork2.Parse("73.202.12.148/32")],
+        eventLogSelectors = [
             new EventLogSelector {
                 logName                = "Security",
                 eventId                = 4625,
@@ -44,14 +44,21 @@ public class EventLogListenerTest: IDisposable {
                 source                  = "MSExchangeFrontEndTransport",
                 eventId                 = 1035,
                 ipAddressEventDataIndex = 3
+            },
+            new EventLogSelector {
+                logName                = "Microsoft-Windows-IIS-Logging/Logs",
+                source                 = "IIS-Logging",
+                eventId                = 6200,
+                ipAddressEventDataName = "c-ip",
+                eventPredicate         = "[EventData/Data[@Name='sc-status']=403]"
             }
-        }
+        ]
     };
 
     private readonly EventLogListener listener;
 
-    private readonly IList<EventLogWatcherFacade> watcherFacades = new List<EventLogWatcherFacade>();
-    private readonly IList<EventLogQueryFacade>   queries        = new List<EventLogQueryFacade>();
+    private readonly IList<EventLogWatcherFacade> watcherFacades = [];
+    private readonly IList<EventLogQueryFacade>   queries        = [];
 
     public EventLogListenerTest(ITestOutputHelper testOutputHelper) {
         XunitTestOutputTarget.start(testOutputHelper);
@@ -87,9 +94,17 @@ public class EventLogListenerTest: IDisposable {
     }
 
     [Fact]
+    public void queryWithSourceAndPredicate() {
+        EventLogQueryFacade actual = queries[3];
+        Assert.Equal("Microsoft-Windows-IIS-Logging/Logs", actual.path);
+        Assert.Equal(PathType.LogName, actual.pathType);
+        Assert.Equal("*[System/EventID=6200][System/Provider/@Name=\"IIS-Logging\"][EventData/Data[@Name='sc-status']=403]", actual.query);
+    }
+
+    [Fact]
     public void builtInPattern() {
         EventLogRecordFacade record = A.Fake<EventLogRecordFacade>();
-        A.CallTo(() => record.GetPropertyValues(A<EventLogPropertySelectorFacade>._)).Returns(new object[] { "141.98.9.20" });
+        A.CallTo(() => record.GetPropertyValues(A<EventLogPropertySelectorFacade>._)).Returns(["141.98.9.20"]);
         IPAddress? actualAddress = null;
         listener.failure += (_, address) => actualAddress = address;
 
@@ -106,7 +121,7 @@ public class EventLogListenerTest: IDisposable {
     public void customPattern() {
         EventLogRecordFacade record = A.Fake<EventLogRecordFacade>();
         A.CallTo(() => record.Properties)
-            .Returns(new List<EventPropertyFacade> { new("sshd: PID 29722: Failed password for invalid user root from 71.194.180.25 port 48316 ssh2") });
+            .Returns([new EventPropertyFacade("sshd: PID 29722: Failed password for invalid user root from 71.194.180.25 port 48316 ssh2")]);
         IPAddress? actualAddress = null;
         listener.failure += (_, address) => actualAddress = address;
 
@@ -131,7 +146,7 @@ public class EventLogListenerTest: IDisposable {
         EventLogWatcherFacade watcher = A.Fake<EventLogWatcherFacade>();
         A.CallToSet(() => watcher.Enabled).Throws<EventLogNotFoundException>();
 
-        new EventLogListenerImpl(invalidConfiguration, _ => watcher);
+        _ = new EventLogListenerImpl(invalidConfiguration, _ => watcher);
 
         A.CallTo(() => watcher.Dispose()).MustHaveHappened();
     }
@@ -149,7 +164,7 @@ public class EventLogListenerTest: IDisposable {
         EventLogWatcherFacade watcher = A.Fake<EventLogWatcherFacade>();
         A.CallToSet(() => watcher.Enabled).Throws<UnauthorizedAccessException>();
 
-        new EventLogListenerImpl(invalidConfiguration, _ => watcher);
+        _ = new EventLogListenerImpl(invalidConfiguration, _ => watcher);
 
         A.CallTo(() => watcher.Dispose()).MustHaveHappened();
     }
@@ -170,12 +185,12 @@ public class EventLogListenerTest: IDisposable {
     [Fact]
     public void eventDataIndex() {
         EventLogRecordFacade record = A.Fake<EventLogRecordFacade>();
-        A.CallTo(() => record.Properties).Returns(new List<EventPropertyFacade> {
-            new("LogonDenied"),
-            new("Default Frontend WIN-EXCHANGE"),
-            new("Login"),
-            new("42.85.233.11")
-        });
+        A.CallTo(() => record.Properties).Returns([
+            new EventPropertyFacade("LogonDenied"),
+            new EventPropertyFacade("Default Frontend WIN-EXCHANGE"),
+            new EventPropertyFacade("Login"),
+            new EventPropertyFacade("42.85.233.11")
+        ]);
         IPAddress? actualAddress = null;
         listener.failure += (_, address) => actualAddress = address;
 

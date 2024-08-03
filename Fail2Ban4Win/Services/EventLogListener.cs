@@ -100,8 +100,12 @@ public class EventLogListenerImpl: EventLogListener {
         StringBuilder queryBuilder = new("*");
         queryBuilder.Append($"[System/EventID={selector.eventId}]");
 
-        if (selector.source is not null) {
+        if (!string.IsNullOrWhiteSpace(selector.source)) {
             queryBuilder.Append($"[System/Provider/@Name=\"{SecurityElement.Escape(selector.source)}\"]");
+        }
+
+        if (!string.IsNullOrWhiteSpace(selector.eventPredicate)) {
+            queryBuilder.Append(selector.eventPredicate);
         }
 
         return queryBuilder.ToString();

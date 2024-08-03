@@ -39,7 +39,7 @@ public class BanManagerTest: IDisposable {
         banRepeatedOffenseMax         = 4,
         logLevel                      = LogLevel.Trace,
         maxAllowedFailures            = MAX_ALLOWED_FAILURES,
-        neverBanSubnets               = new[] { IPNetwork2.Parse("73.202.12.148/32") }
+        neverBanSubnets               = [IPNetwork2.Parse("73.202.12.148/32")]
     };
 
     private readonly FakeFirewallRulesCollection firewallRules  = new();
@@ -191,10 +191,10 @@ public class BanManagerTest: IDisposable {
 
     [Fact]
     public void unbanAfterBanExpired() {
-        ICollection<IPAddress> sourceAddresses = new[] {
+        ICollection<IPAddress> sourceAddresses = [
             IPAddress.Parse("198.51.100.1"),
             IPAddress.Parse("101.206.243.0")
-        };
+        ];
 
         CountdownEvent rulesRemoved = new(sourceAddresses.Count);
         firewallRules.ruleRemoved += (_, _) => rulesRemoved.Signal();
@@ -248,26 +248,26 @@ public class BanManagerTest: IDisposable {
         Assert.Equal(expectedDuration, actual);
     }
 
-    public static readonly IEnumerable<object[]> BAN_DURATION_DATA = new[] {
+    public static readonly IEnumerable<object[]> BAN_DURATION_DATA = [
         new object[] { 1, 1.0, TimeSpan.FromMinutes(1) },
-        new object[] { 2, 1.0, TimeSpan.FromMinutes(2) },
-        new object[] { 3, 1.0, TimeSpan.FromMinutes(3) },
-        new object[] { 4, 1.0, TimeSpan.FromMinutes(4) },
-        new object[] { 5, 1.0, TimeSpan.FromMinutes(4) },
-        new object[] { 6, 1.0, TimeSpan.FromMinutes(4) },
-        new object[] { 1, 1.5, TimeSpan.FromMinutes(1) },
-        new object[] { 2, 1.5, TimeSpan.FromMinutes(2.5) },
-        new object[] { 3, 1.5, TimeSpan.FromMinutes(4) },
-        new object[] { 4, 1.5, TimeSpan.FromMinutes(5.5) },
-        new object[] { 5, 1.5, TimeSpan.FromMinutes(5.5) },
-        new object[] { 6, 1.5, TimeSpan.FromMinutes(5.5) },
-        new object[] { 1, 2.0, TimeSpan.FromMinutes(1) },
-        new object[] { 2, 2.0, TimeSpan.FromMinutes(3) },
-        new object[] { 3, 2.0, TimeSpan.FromMinutes(5) },
-        new object[] { 4, 2.0, TimeSpan.FromMinutes(7) },
-        new object[] { 5, 2.0, TimeSpan.FromMinutes(7) },
-        new object[] { 6, 2.0, TimeSpan.FromMinutes(7) },
-    };
+        [2, 1.0, TimeSpan.FromMinutes(2)],
+        [3, 1.0, TimeSpan.FromMinutes(3)],
+        [4, 1.0, TimeSpan.FromMinutes(4)],
+        [5, 1.0, TimeSpan.FromMinutes(4)],
+        [6, 1.0, TimeSpan.FromMinutes(4)],
+        [1, 1.5, TimeSpan.FromMinutes(1)],
+        [2, 1.5, TimeSpan.FromMinutes(2.5)],
+        [3, 1.5, TimeSpan.FromMinutes(4)],
+        [4, 1.5, TimeSpan.FromMinutes(5.5)],
+        [5, 1.5, TimeSpan.FromMinutes(5.5)],
+        [6, 1.5, TimeSpan.FromMinutes(5.5)],
+        [1, 2.0, TimeSpan.FromMinutes(1)],
+        [2, 2.0, TimeSpan.FromMinutes(3)],
+        [3, 2.0, TimeSpan.FromMinutes(5)],
+        [4, 2.0, TimeSpan.FromMinutes(7)],
+        [5, 2.0, TimeSpan.FromMinutes(7)],
+        [6, 2.0, TimeSpan.FromMinutes(7)],
+    ];
 
     [Fact]
     public void longDelaysDoNotCrash() {

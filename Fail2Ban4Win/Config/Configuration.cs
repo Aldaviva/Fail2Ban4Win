@@ -49,9 +49,10 @@ public class EventLogSelector: ICloneable {
     public Regex? ipAddressPattern { get; set; }
     public string? ipAddressEventDataName { get; set; }
     public int ipAddressEventDataIndex { get; set; }
+    public string? eventPredicate { get; set; }
 
     public override string ToString() =>
-        $"{nameof(logName)}: {logName}, {nameof(source)}: {source}, {nameof(eventId)}: {eventId}, {nameof(ipAddressPattern)}: {ipAddressPattern}, {nameof(ipAddressEventDataName)}: {ipAddressEventDataName}, {nameof(ipAddressEventDataIndex)}: {ipAddressEventDataIndex}";
+        $"{nameof(logName)}: {logName}, {nameof(source)}: {source}, {nameof(eventId)}: {eventId}, {nameof(ipAddressPattern)}: {ipAddressPattern}, {nameof(ipAddressEventDataName)}: {ipAddressEventDataName}, {nameof(ipAddressEventDataIndex)}: {ipAddressEventDataIndex}, {nameof(eventPredicate)}: {eventPredicate}";
 
     public object Clone() => new EventLogSelector {
         ipAddressEventDataName  = ipAddressEventDataName,
@@ -59,7 +60,8 @@ public class EventLogSelector: ICloneable {
         ipAddressPattern        = ipAddressPattern is not null ? new Regex(ipAddressPattern.ToString(), ipAddressPattern.Options, ipAddressPattern.MatchTimeout) : null,
         logName                 = logName,
         source                  = source,
-        ipAddressEventDataIndex = ipAddressEventDataIndex
+        ipAddressEventDataIndex = ipAddressEventDataIndex,
+        eventPredicate          = eventPredicate
     };
 
 }
