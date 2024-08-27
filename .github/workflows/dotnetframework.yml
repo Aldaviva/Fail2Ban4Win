@@ -13,13 +13,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v1.3.1
+        uses: microsoft/setup-msbuild@v2
 
       - name: Clone
-        uses: actions/checkout@v3.3.0
+        uses: actions/checkout@v4
 
       - name: Initialize test reporting
-        uses: testspace-com/setup-testspace@v1.0.5
+        uses: testspace-com/setup-testspace@v1
         with:
           domain: ${{github.repository_owner}}
 
@@ -42,16 +42,17 @@ jobs:
         run: testspace Tests/TestResults/TestResults.xml
 
       - name: Upload coverage
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: Tests/TestResults/coverage.info
+          files: Tests/TestResults/coverage.info
+          format: lcov
 
       - name: Stop if tests failed
         run: exit $env:TEST_EXIT_CODE
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PROJECT_NAME }}
           path: |
