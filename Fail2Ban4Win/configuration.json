@@ -23,6 +23,11 @@
 			"eventId": 0,
 			"ipAddressPattern": "^sshd: PID \\d+: Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5} ssh\\d?$"
 		}, {
+			"logName": "Application",
+			"source": "sshd-session",
+			"eventId": 0,
+			"ipAddressPattern": "^sshd-session: PID \\d+: Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5} ssh\\d?$"
+		}, {
 			"logName": "OpenSSH/Operational",
 			"eventId": 4,
 			"ipAddressEventDataName": "payload",
