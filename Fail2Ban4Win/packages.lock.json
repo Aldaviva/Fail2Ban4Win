@@ -4,9 +4,9 @@
     ".NETFramework,Version=v4.8": {
       "ILRepack.Lib.MSBuild.Task": {
         "type": "Direct",
-        "requested": "[2.0.34, )",
-        "resolved": "2.0.34",
-        "contentHash": "L8TGuOMXjjT9tHf55bruPBBxJ9y17dLTf27cxPox6hhbdxFNNe7nwKzgYw6r/DZOH8O5qRxKpLeW/y80Gz45cg=="
+        "requested": "[2.0.34.2, )",
+        "resolved": "2.0.34.2",
+        "contentHash": "tXuZZbIqiODq/yESIz04p97ZLCy4Uh21cSJdvKEl6T4BBQ5s7QnVycg2lfXwtXuhis6pwH5MuEQCi4pKP+xvsA=="
       },
       "IPNetwork2": {
         "type": "Direct",
@@ -47,9 +47,9 @@
       },
       "NLog": {
         "type": "Direct",
-        "requested": "[5.3.2, )",
-        "resolved": "5.3.2",
-        "contentHash": "cQRQZuDMjSyMe9EQBnI9v55YAMMz8GAfFd6fFJ6tc/kXnG7Hze8p1I8MgvWSBG6E36wA8vSxRrlm8uSIG+SENg=="
+        "requested": "[5.3.3, )",
+        "resolved": "5.3.3",
+        "contentHash": "cy0+hlrUbYu+6mgUsILqCcqlJ2Csqyt2lm8y9T9kE8nhgwl8SvR+LM21QX4nmzFCPiowbrTFYxNF8+gWpy7/HQ=="
       },
       "WindowsFirewallHelper": {
         "type": "Direct",
