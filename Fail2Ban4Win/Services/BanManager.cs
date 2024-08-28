@@ -19,7 +19,7 @@ using WindowsFirewallHelper.FirewallRules;
 
 namespace Fail2Ban4Win.Services;
 
-public interface BanManager: IDisposable { }
+public interface BanManager: IDisposable;
 
 public class BanManagerImpl: BanManager {
 
@@ -127,7 +127,7 @@ public class BanManagerImpl: BanManager {
         FirewallWASRuleWin7 rule = new(getRuleName(subnet), FirewallAction.Block, FirewallDirection.Inbound, ALL_PROFILES) {
             Description     = $"Banned {now:s}. Will unban {now + unbanDuration:s}. Offense #{clientFailureHistory.banCount:N0}.",
             Grouping        = GROUP_NAME,
-            RemoteAddresses = new IAddress[] { new NetworkAddress(subnet.Network, subnet.Netmask) }
+            RemoteAddresses = [new NetworkAddress(subnet.Network, subnet.Netmask)]
         };
 
         if (!configuration.isDryRun) {

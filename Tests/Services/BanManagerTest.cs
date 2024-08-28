@@ -42,7 +42,7 @@ public class BanManagerTest: IDisposable {
         neverBanSubnets               = [IPNetwork2.Parse("73.202.12.148/32")]
     };
 
-    private readonly FakeFirewallRulesCollection firewallRules  = new();
+    private readonly FakeFirewallRulesCollection firewallRules  = [];
     private readonly FirewallFacade              firewallFacade = A.Fake<FirewallFacade>();
 
     public BanManagerTest(ITestOutputHelper testOutput) {
@@ -249,7 +249,7 @@ public class BanManagerTest: IDisposable {
     }
 
     public static readonly IEnumerable<object[]> BAN_DURATION_DATA = [
-        new object[] { 1, 1.0, TimeSpan.FromMinutes(1) },
+        [1, 1.0, TimeSpan.FromMinutes(1)],
         [2, 1.0, TimeSpan.FromMinutes(2)],
         [3, 1.0, TimeSpan.FromMinutes(3)],
         [4, 1.0, TimeSpan.FromMinutes(4)],
@@ -271,10 +271,11 @@ public class BanManagerTest: IDisposable {
 
     [Fact]
     public void longDelaysDoNotCrash() {
-        configuration.banPeriod = TimeSpan.FromDays(364);
+        configuration.banPeriod     = TimeSpan.FromDays(364);
+        configuration.failureWindow = TimeSpan.FromHours(1);
 
         IPAddress sourceAddress = IPAddress.Parse("198.51.100.1");
-        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+        for (int i = 0; i < configuration.maxAllowedFailures + 1; i++) {
             eventLogListener.failure += Raise.With(null, sourceAddress);
         }
 
