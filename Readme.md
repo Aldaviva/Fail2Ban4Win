@@ -68,7 +68,7 @@ You can [customize](#configuration) most of the above specifics.
 
 <a id="configuration"></a>
 ## Configuration
-The provided example configuration file has selectors for [Remote Desktop Services](https://docs.microsoft.com/en-us/windows/win32/termserv/terminal-services-portal), [Cygwin OpenSSH sshd](https://cygwin.com/packages/summary/openssh.html) (updated in 1.3.1), and [Windows OpenSSH sshd](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview). It also has some example values for `neverBanSubnets` and other properties that you can replace with your own values.
+The provided example configuration file has selectors for [Remote Desktop Services](https://docs.microsoft.com/en-us/windows/win32/termserv/terminal-services-portal), [Cygwin OpenSSH sshd](https://cygwin.com/packages/summary/openssh.html) (updated in [1.3.1](https://github.com/Aldaviva/Fail2Ban4Win/releases/tag/1.3.1)), and [Windows OpenSSH sshd](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview) (updated in [1.3.1](https://github.com/Aldaviva/Fail2Ban4Win/releases/tag/1.3.1)). It also has some example values for `neverBanSubnets` and other properties that you can replace with your own values.
 
 Be aware that `isDryRun` defaults to `true` to avoid accidentally blocking traffic until you're ready.
 

@@ -31,12 +31,12 @@
 			"logName": "OpenSSH/Operational",
 			"eventId": 4,
 			"ipAddressEventDataName": "payload",
-			"ipAddressPattern": "^Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5} ssh\\d?$"
+			"ipAddressPattern": "^(?:sshd: )?Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5} ssh\\d?$"
 		}, {
 			"logName": "OpenSSH/Operational",
 			"eventId": 4,
 			"ipAddressEventDataName": "payload",
-			"ipAddressPattern": "^Invalid user .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5}$"
+			"ipAddressPattern": "^(?:sshd: )?Invalid user .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5}$"
 		}
 	]
 }
