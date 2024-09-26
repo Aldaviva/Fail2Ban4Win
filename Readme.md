@@ -40,7 +40,7 @@ You can [customize](#configuration) most of the above specifics.
 <a id="requirements"></a>
 ## Requirements
 - Windows 7 or later, or Windows Server 2008 R2 or later
-- [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework) or later
+- [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework) or later
 - Use Windows Firewall, as opposed to a third-party firewall solution
 
 <a id="installation"></a>
