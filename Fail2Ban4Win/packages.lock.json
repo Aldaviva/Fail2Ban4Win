@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dependencies": {
-    ".NETFramework,Version=v4.8": {
+    ".NETFramework,Version=v4.7.2": {
       "ILRepack.Lib.MSBuild.Task": {
         "type": "Direct",
         "requested": "[2.0.34.2, )",
@@ -12,7 +12,10 @@
         "type": "Direct",
         "requested": "[3.0.667, )",
         "resolved": "3.0.667",
-        "contentHash": "0GgNIm12cDtI0Kc8oaVbgSQgqQ+yJuOyf1oyJ9eQ+Xt4uQ/2ZTvoTf6KBuRxjWF7rTD+1AreUES5khMecGAuTg=="
+        "contentHash": "0GgNIm12cDtI0Kc8oaVbgSQgqQ+yJuOyf1oyJ9eQ+Xt4uQ/2ZTvoTf6KBuRxjWF7rTD+1AreUES5khMecGAuTg==",
+        "dependencies": {
+          "System.Memory": "4.5.5"
+        }
       },
       "LightInject": {
         "type": "Direct",
@@ -47,9 +50,9 @@
       },
       "NLog": {
         "type": "Direct",
-        "requested": "[5.3.3, )",
-        "resolved": "5.3.3",
-        "contentHash": "cy0+hlrUbYu+6mgUsILqCcqlJ2Csqyt2lm8y9T9kE8nhgwl8SvR+LM21QX4nmzFCPiowbrTFYxNF8+gWpy7/HQ=="
+        "requested": "[5.3.4, )",
+        "resolved": "5.3.4",
+        "contentHash": "gLy7+O1hEYJXIlcTr1/VWjGXrZTQFZzYNO18IWasD64pNwz0BreV+nHLxWKXWZzERRzoKnsk2XYtwLkTVk7J1A=="
       },
       "WindowsFirewallHelper": {
         "type": "Direct",
@@ -190,9 +193,9 @@
         "contentHash": "okurQJO6NRE/apDIP23ajJ0hpiNmJ+f0BwOlB/cSqTLQlw5upkf+5+96+iG2Jw40G1fCVCyPz/FhIABUjMR+RQ=="
       }
     },
-    ".NETFramework,Version=v4.8/win": {},
-    ".NETFramework,Version=v4.8/win-arm64": {},
-    ".NETFramework,Version=v4.8/win-x64": {},
-    ".NETFramework,Version=v4.8/win-x86": {}
+    ".NETFramework,Version=v4.7.2/win": {},
+    ".NETFramework,Version=v4.7.2/win-arm64": {},
+    ".NETFramework,Version=v4.7.2/win-x64": {},
+    ".NETFramework,Version=v4.7.2/win-x86": {}
   }
 }
