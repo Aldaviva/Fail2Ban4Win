@@ -7,6 +7,8 @@
 	"banRepeatedOffenseCoefficient": 1,
 	"banRepeatedOffenseMax": 4,
 	"logLevel": "Info",
+	"logFolder": "Logs",
+	"logHistory": 100,
 	"neverBanSubnets": [
 		"67.210.32.33/32",
 		"73.202.12.148/32"
