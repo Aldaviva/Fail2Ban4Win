@@ -22,6 +22,8 @@ public class Configuration: ICloneable {
     public ICollection<IPNetwork2>? neverBanSubnets { get; set; }
     public bool neverBanReservedSubnets { get; set; } = true;
     public ICollection<EventLogSelector> eventLogSelectors { get; set; } = null!;
+    public string? logFolder { get; set; } // absolute or relative to executable
+    public int? logHistory { get; set; } // number of logs to archive ... default is 100, log archiving is done daily
 
     public override string ToString() =>
         $"{nameof(maxAllowedFailures)}: {maxAllowedFailures}, {nameof(failureWindow)}: {failureWindow}, {nameof(banPeriod)}: {banPeriod}, {nameof(banSubnetBits)}: {banSubnetBits}, {nameof(banRepeatedOffenseCoefficient)}: {banRepeatedOffenseCoefficient}, {nameof(banRepeatedOffenseMax)}: {banRepeatedOffenseMax}, {nameof(neverBanSubnets)}: [{{{string.Join("}, {", neverBanSubnets ?? Array.Empty<IPNetwork2>())}}}], {nameof(eventLogSelectors)}: [{{{string.Join("}, {", eventLogSelectors)}}}], {nameof(isDryRun)}: {isDryRun}, {nameof(logLevel)}: {logLevel}";
@@ -36,7 +38,9 @@ public class Configuration: ICloneable {
         banRepeatedOffenseMax         = banRepeatedOffenseMax,
         logLevel                      = logLevel,
         neverBanSubnets               = neverBanSubnets is not null ? new List<IPNetwork2>(neverBanSubnets) : null,
-        eventLogSelectors             = eventLogSelectors.Select(selector => (EventLogSelector) selector.Clone()).ToList()
+        eventLogSelectors             = eventLogSelectors.Select(selector => (EventLogSelector) selector.Clone()).ToList(),
+        logFolder                     = logFolder,
+        logHistory                    = logHistory,
     };
 
 }
