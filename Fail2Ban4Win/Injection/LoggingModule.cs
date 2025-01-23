@@ -28,7 +28,7 @@ public class LoggingModule: ICompositionRoot {
                 fileTarget.ArchiveEvery = FileArchivePeriod.Day;
                 fileTarget.MaxArchiveFiles = configuration.logHistory ?? 100;
                 fileTarget.EnableArchiveFileCompression = true;
-                fileTarget.FileName = System.IO.Path.Combine(logFolder, $"{DateTime.Now.ToString("yyyy-MM-dd")}.log");
+                fileTarget.FileName = System.IO.Path.Combine(logFolder, "${date:format=yyyy-MM-dd}.log");
                 fileTarget.Layout = console.Layout;
                 config.AddRule(configuration.logLevel ?? LogLevel.Debug, LogLevel.Fatal, fileTarget);
             }
