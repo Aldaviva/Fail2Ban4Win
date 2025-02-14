@@ -8,11 +8,14 @@ using NLog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Unfucked;
 using WindowsFirewallHelper;
 using WindowsFirewallHelper.Addresses;
 using WindowsFirewallHelper.FirewallRules;
@@ -49,22 +52,53 @@ public class BanManagerImpl: BanManager {
         eventLogListener.failure += onFailure;
 
         if (configuration.isDryRun) {
-            LOGGER.Info("Started in dry run mode. No changes will be made to Windows Firewall.");
+            LOGGER.Warn("Started in dry run mode. No changes will be made to Windows Firewall. If you're satisfied with the configuration and want to actually create firewall rules, set {config} " +
+                "to false in {file}.", nameof(Configuration.isDryRun), ConfigurationModule.FILENAME);
         }
 
-        Task.Run(() => {
+        Task.Run(init, cancellationTokenSource.Token);
+    }
+
+    private void init() {
+        try {
             IEnumerable<FirewallWASRule> oldRules = firewall.Rules.Where(isBanRule()).ToList();
             if (oldRules.Any()) {
-                LOGGER.Info("Deleting {0} existing {1} rules from Windows Firewall because they may be stale", oldRules.Count(), GROUP_NAME);
-                foreach (FirewallWASRule oldRule in oldRules) {
-                    if (!configuration.isDryRun) {
-                        firewall.Rules.Remove(oldRule);
+                if (configuration.unbanAllOnStartup) {
+                    LOGGER.Info("Deleting {count} existing rules from Windows Firewall because Fail2Ban4Win restarted. To preserve them, set {config} to false in {file}.", oldRules.Count(),
+                        nameof(Configuration.unbanAllOnStartup), ConfigurationModule.FILENAME);
+                    foreach (FirewallWASRule oldRule in oldRules) {
+                        if (!configuration.isDryRun) {
+                            firewall.Rules.Remove(oldRule);
+                        }
                     }
+                } else {
+                    DateTime now             = DateTime.Now;
+                    int      scheduledUnbans = 0;
+                    foreach (FirewallWASRule oldRule in oldRules) {
+                        if (parseRuleName(oldRule.Name) is { } subnet && parseRuleDescription(oldRule.Description) is var (_, unbanTime, _)) {
+                            TimeSpan unbanDuration = unbanTime - now;
+                            if (unbanDuration > TimeSpan.Zero) {
+                                scheduleUnban(subnet, unbanDuration);
+                                scheduledUnbans++;
+                                LOGGER.Debug("Resumed timer after Fail2Ban4Win restarted to unban {subnet} at the original time of {time:O} (in {duration:g})", subnet, unbanTime, unbanDuration);
+                            } else if (!configuration.isDryRun) {
+                                LOGGER.Info("Ban already expired on subnet {subnet} while Fail2Ban4Win wasn't running, removing firewall rule {name} now", subnet, oldRule.Name);
+                                firewall.Rules.Remove(oldRule);
+                            }
+                        } else if (!configuration.isDryRun) {
+                            LOGGER.Warn("Failed to parse name or description of existing rule while repopulating timers after restart, deleting malformed rule. Name: {name}, description: \"{desc}\"",
+                                oldRule.Name, oldRule.Description);
+                            firewall.Rules.Remove(oldRule);
+                        }
+                    }
+                    LOGGER.Info("Resumed {count:N0} timers to unban subnets after Fail2Ban4Win restarted", scheduledUnbans);
                 }
             }
 
             initialRuleDeletionDone.Set();
-        }, cancellationTokenSource.Token);
+        } catch (Exception e) when (e is not OutOfMemoryException) {
+            LOGGER.Error(e, "Uncaught exception in {func}", nameof(init));
+        }
     }
 
     private void onFailure(object sender, IPAddress ipAddress) {
@@ -83,32 +117,32 @@ public class BanManagerImpl: BanManager {
     // this runs inside a lock on the SubnetFailureHistory
     private bool shouldBan(IPNetwork2 subnet, SubnetFailureHistory clientFailureHistory) {
         if (subnet.IsIANAReserved() && configuration.neverBanReservedSubnets) {
-            LOGGER.Debug("Not banning {0} because it is contained in an IANA-reserved block such as {1}. To ban anyway, set \"{2}\" to false.", subnet, IPNetwork2.IANA_CBLK_RESERVED1,
+            LOGGER.Debug("Not banning {subnet} because it is contained in an IANA-reserved block such as {reserved1}. To ban anyway, set {config} to false.", subnet, IPNetwork2.IANA_CBLK_RESERVED1,
                 nameof(configuration.neverBanReservedSubnets));
             return false;
         }
 
         if (LOOPBACK.Contains(subnet)) {
-            LOGGER.Debug("Not banning {0} because it is a loopback address", subnet);
+            LOGGER.Debug("Not banning {subnet} because it is a loopback address", subnet);
             return false;
         }
 
         IPNetwork2? neverBanSubnet = configuration.neverBanSubnets?.FirstOrDefault(neverBan => neverBan.Overlap(subnet));
         if (neverBanSubnet is not null) {
-            LOGGER.Debug("Not banning {0} because it overlaps the {2} subnet in the \"{3}\" values in {1}", subnet, ConfigurationModule.CONFIGURATION_FILENAME, neverBanSubnet,
-                nameof(configuration.neverBanSubnets));
+            LOGGER.Debug("Not banning {subnet} because it overlaps the {neverBan} subnet in the \"{config}\" values in {file}", subnet, neverBanSubnet, nameof(configuration.neverBanSubnets),
+                ConfigurationModule.FILENAME);
             return false;
         }
 
         int recentFailureCount = clientFailureHistory.countFailuresSinceAndPrune(DateTimeOffset.Now - configuration.failureWindow);
         if (recentFailureCount <= configuration.maxAllowedFailures) {
-            LOGGER.Debug("Not banning {0} because it has only failed {1} times in the last {2}, which does not exceed the maximum {3} failures allowed", subnet, recentFailureCount,
+            LOGGER.Debug("Not banning {subnet} because it has only failed {count} times in the last {window}, which does not exceed the maximum {max} failures allowed", subnet, recentFailureCount,
                 configuration.failureWindow, configuration.maxAllowedFailures);
             return false;
         }
 
         if (firewall.Rules.Any(isBanRule(subnet))) {
-            LOGGER.Debug("Not banning {0} because it is already banned. This is likely caused by receiving many failed requests before our first firewall rule took effect.", subnet);
+            LOGGER.Debug("Not banning {subnet} because it is already banned. This is likely caused by receiving many failed requests before our first firewall rule took effect.", subnet);
             return false;
         }
 
@@ -124,8 +158,8 @@ public class BanManagerImpl: BanManager {
         DateTime now           = DateTime.Now;
         TimeSpan unbanDuration = getUnbanDuration(clientFailureHistory.banCount);
 
-        FirewallWASRuleWin7 rule = new(getRuleName(subnet), FirewallAction.Block, FirewallDirection.Inbound, ALL_PROFILES) {
-            Description     = $"Banned {now:s}. Will unban {now + unbanDuration:s}. Offense #{clientFailureHistory.banCount:N0}.",
+        FirewallWASRuleWin7 rule = new(generateRuleName(subnet), FirewallAction.Block, FirewallDirection.Inbound, ALL_PROFILES) {
+            Description     = generateRuleDescription(now, unbanDuration, clientFailureHistory.banCount),
             Grouping        = GROUP_NAME,
             RemoteAddresses = [new NetworkAddress(subnet.Network, subnet.Netmask)]
         };
@@ -134,17 +168,21 @@ public class BanManagerImpl: BanManager {
             firewall.Rules.Add(rule);
         }
 
-        LongDelay(unbanDuration, cancellationTokenSource.Token)
-            .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current)
-            .ContinueWith(result => LOGGER.Error(result.Exception, "Exception unbanning subnet {0}", subnet), cancellationTokenSource.Token, TaskContinuationOptions.OnlyOnFaulted,
-                TaskScheduler.Current);
-
-        LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {0}, which will be removed at {1:O} (in {2:g})", subnet, now + unbanDuration, unbanDuration);
+        scheduleUnban(subnet, unbanDuration);
 
         if (!configuration.isDryRun) {
+            LOGGER.Info("Added Windows Firewall rule to block inbound traffic from {subnet}, which will be removed at {time:O} (in {duration:g})", subnet, now + unbanDuration, unbanDuration);
             clientFailureHistory.clearFailures();
+        } else {
+            LOGGER.Info("Would have added Windows Firewall rule to block inbound traffic from {subnet}, but dry run mode is enabled, so skipping adding rule. " +
+                "To actually add firewall rules, set {config} to false in {file} and restart Fail2Ban4Win.", subnet, nameof(Configuration.isDryRun), ConfigurationModule.FILENAME);
         }
     }
+
+    private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => Tasks.Delay(unbanDuration, cancellationTokenSource.Token)
+        .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current)
+        .ContinueWith(result => LOGGER.Error(result.Exception, "Exception unbanning subnet {subnet}", subnet), cancellationTokenSource.Token, TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Current);
 
     /// <summary>For first offenses, this returns <c>banPeriod</c> (from <c>configuration.json</c>). For repeated offenses, the ban period is increased by <c>banRepeatedOffenseCoefficient</c> each time. The ban period stops increasing after <c>banRepeatedOffenseMax</c> offenses.</summary>
     /// <remarks>
@@ -163,7 +201,7 @@ public class BanManagerImpl: BanManager {
     private void unban(IPNetwork2 subnet) {
         IEnumerable<FirewallWASRule> rulesToRemove = firewall.Rules.Where(isBanRule(subnet)).ToList(); //eagerly evaluate Where clause to prevent concurrent modification below
         foreach (FirewallWASRule rule in rulesToRemove) {
-            LOGGER.Info("Ban has expired on subnet {0}, removing firewall rule {1}", subnet, rule.Name);
+            LOGGER.Info("Ban has expired for subnet {subnet}, removing firewall rule {name}", subnet, rule.Name);
             if (!configuration.isDryRun) {
                 firewall.Rules.Remove(rule);
             }
@@ -171,28 +209,27 @@ public class BanManagerImpl: BanManager {
     }
 
     private static Func<FirewallWASRule, bool> isBanRule(IPNetwork2? subnet = null) {
-        string? ruleName = subnet is not null ? getRuleName(subnet) : null;
+        string? ruleName = subnet is not null ? generateRuleName(subnet) : null;
         return rule => rule.Grouping == GROUP_NAME && (ruleName is null || ruleName == rule.Name);
     }
 
-    private static string getRuleName(IPNetwork2 ipAddress) => $"Banned {ipAddress}";
+    private static string generateRuleName(IPNetwork2 subnet) => $"Banned {subnet}";
 
-    private static Task LongDelay(TimeSpan duration, CancellationToken cancellationToken = default) {
-        /*
-         * max duration of Task.Delay before .NET 6
-         * https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.delay?view=netframework-4.8#system-threading-tasks-task-delay(system-timespan-system-threading-cancellationtoken)
-         */
-        TimeSpan maxShortDelay = TimeSpan.FromMilliseconds(int.MaxValue);
-        Task     result        = Task.CompletedTask;
+    private static readonly Regex BAN_NAME_PATTERN = new(@"^Banned (?<subnet>[\d\./]+?)$");
 
-        for (TimeSpan remaining = duration; remaining > TimeSpan.Zero; remaining = remaining.Subtract(maxShortDelay)) {
-            TimeSpan shortDelay = remaining > maxShortDelay ? maxShortDelay : remaining;
-            result = result.ContinueWith(_ => Task.Delay(shortDelay, cancellationToken), cancellationToken,
-                TaskContinuationOptions.LongRunning | TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current).Unwrap();
-        }
+    private static IPNetwork2? parseRuleName(string name) =>
+        BAN_NAME_PATTERN.Match(name) is { Success: true } match && IPNetwork2.TryParse(match.Groups["subnet"].Value, out IPNetwork2 subnet) ? subnet : null;
 
-        return result;
-    }
+    private static string generateRuleDescription(DateTime now, TimeSpan unbanDuration, int offenseCount) => $"Banned {now:s}. Will unban {now + unbanDuration:s}. Offense #{offenseCount:N0}.";
+
+    private static readonly Regex BAN_DESCRIPTION_PATTERN = new(@"^Banned (?<banned>[\dT:-]+?)\. Will unban (?<unban>[\dT:-]+?)\. Offense #(?<offense>[\d, .']+?)\.$");
+
+    private static (DateTime bannedTime, DateTime unbanTime, int offenseCount)? parseRuleDescription(string ruleDescription) =>
+        BAN_DESCRIPTION_PATTERN.Match(ruleDescription) is { Success: true } match
+        && DateTime.TryParseExact(match.Groups["banned"].Value, "s", null, DateTimeStyles.AssumeLocal, out DateTime bannedTime)
+        && DateTime.TryParseExact(match.Groups["unban"].Value, "s", null, DateTimeStyles.AssumeLocal, out DateTime unbanTme)
+        && int.TryParse(match.Groups["offense"].Value, NumberStyles.AllowThousands, null, out int offense)
+            ? (bannedTime, unbanTme, offense) : null;
 
     public void Dispose() {
         eventLogListener.failure -= onFailure;

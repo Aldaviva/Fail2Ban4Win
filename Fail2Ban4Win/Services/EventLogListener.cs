@@ -51,24 +51,24 @@ public class EventLogListenerImpl: EventLogListener {
             try {
                 watcher.Enabled = true;
             } catch (EventLogNotFoundException e) {
-                LOGGER.Warn("Failed to listen for events in log {0}: {1}. Skipping this event selector", selector.logName, e.Message);
+                LOGGER.Warn("Failed to listen for events in log {log}: {msg}. Skipping this event selector", selector.logName, e.Message);
                 watcher.Dispose();
                 return null;
             } catch (UnauthorizedAccessException e) {
-                LOGGER.Warn("Failed to listen for events in log {0}, possibly because the log does not exist and this program is not running elevated. Skipping this event selector. {1}",
+                LOGGER.Warn("Failed to listen for events in log {log}, possibly because the log does not exist and this program is not running elevated. Skipping this event selector. {msg}",
                     selector.logName, e.Message);
                 watcher.Dispose();
                 return null;
             }
 
-            LOGGER.Info("Listening for Event Log records from the {0} log with event ID {1} and {2}", selector.logName, selector.eventId,
+            LOGGER.Info("Listening for Event Log records from the {log} log with event ID {id} and {source}", selector.logName, selector.eventId,
                 selector.source is not null ? "source " + selector.source : "any source");
             return watcher;
         }).Compact().ToList();
     }
 
     private void onEventRecordWritten(EventLogRecordFacade record, EventLogSelector selector) {
-        LOGGER.Trace("Received Event Log record from log {0} with event ID {1} and source {2}", record.LogName, record.Id, record.ProviderName);
+        LOGGER.Trace("Received Event Log record from log {log} with event ID {id} and source {source}", record.LogName, record.Id, record.ProviderName);
 
         string? stringContainingIpAddress = selector.ipAddressEventDataName is null
             ? record.Properties.ElementAtOrDefault(selector.ipAddressEventDataIndex)?.Value as string
@@ -76,7 +76,7 @@ public class EventLogListenerImpl: EventLogListener {
                 .ElementAtOrDefault(selector.ipAddressEventDataIndex) as string;
 
         if (stringContainingIpAddress is not null) {
-            LOGGER.Trace("Searching for IPv4 address in {0}", stringContainingIpAddress);
+            LOGGER.Trace("Searching for IPv4 address in {str}", stringContainingIpAddress);
             try {
                 MatchCollection matchCollection = (selector.ipAddressPattern ?? DEFAULT_IPV4_ADDRESS_PATTERN).Matches(stringContainingIpAddress);
 
@@ -84,12 +84,12 @@ public class EventLogListenerImpl: EventLogListener {
                     IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>().Select(match => IPAddress.Parse(match.Groups["ipAddress"].Value));
 
                     foreach (IPAddress failingIpAddress in failingIpAddresses) {
-                        LOGGER.Info("Authentication failure detected from {0} (log={1}, event={2}, source={3})", failingIpAddress, record.LogName, record.Id, record.ProviderName);
+                        LOGGER.Info("Authentication failure detected from {addr} (log={log}, event={id}, source={source})", failingIpAddress, record.LogName, record.Id, record.ProviderName);
                         failure?.Invoke(this, failingIpAddress);
                     }
                 }
             } catch (RegexMatchTimeoutException) {
-                LOGGER.Warn("Searching for IP address in event {0} with ID {1} from {2} source of {3} log took more than {4:g}, ignoring this event.",
+                LOGGER.Warn("Searching for IP address in event {recordId} with ID {id} from {source} source of {log} log took more than {timeout:g}, ignoring this event.",
                     record.RecordId, record.Id, record.ProviderName, record.LogName, RegexDeserializer.MATCH_TIMEOUT);
             }
         }

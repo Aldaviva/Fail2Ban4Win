@@ -11,16 +11,10 @@ public class RegexDeserializer: TypeConverter {
 
     public static readonly TimeSpan MATCH_TIMEOUT = TimeSpan.FromSeconds(3);
 
-    public static void register() {
-        TypeDescriptor.AddAttributes(typeof(Regex), new TypeConverterAttribute(typeof(RegexDeserializer)));
-    }
+    public static void register() => TypeDescriptor.AddAttributes(typeof(Regex), new TypeConverterAttribute(typeof(RegexDeserializer)));
 
-    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) {
-        return sourceType == typeof(string);
-    }
+    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) => sourceType == typeof(string);
 
-    public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) {
-        return new Regex((string) value, RegexOptions.None, MATCH_TIMEOUT);
-    }
+    public override object? ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object? value) => value is string v ? new Regex(v, RegexOptions.None, MATCH_TIMEOUT) : null;
 
 }

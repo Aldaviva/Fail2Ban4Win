@@ -7,24 +7,27 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global - don't mess with the deserializer
+
 namespace Fail2Ban4Win.Config;
 
 public class Configuration: ICloneable {
 
     public bool isDryRun { get; set; }
-    public int maxAllowedFailures { get; set; }
-    public TimeSpan failureWindow { get; set; }
-    public TimeSpan banPeriod { get; set; }
+    public int maxAllowedFailures { get; set; } = 9;
+    public TimeSpan failureWindow { get; set; } = TimeSpan.FromDays(1);
+    public TimeSpan banPeriod { get; set; } = TimeSpan.FromDays(1);
     public byte? banSubnetBits { get; set; }
     public double? banRepeatedOffenseCoefficient { get; set; }
     public int? banRepeatedOffenseMax { get; set; }
     public LogLevel? logLevel { get; set; }
     public ICollection<IPNetwork2>? neverBanSubnets { get; set; }
     public bool neverBanReservedSubnets { get; set; } = true;
+    public bool unbanAllOnStartup { get; set; } = true;
     public ICollection<EventLogSelector> eventLogSelectors { get; set; } = null!;
 
     public override string ToString() =>
-        $"{nameof(maxAllowedFailures)}: {maxAllowedFailures}, {nameof(failureWindow)}: {failureWindow}, {nameof(banPeriod)}: {banPeriod}, {nameof(banSubnetBits)}: {banSubnetBits}, {nameof(banRepeatedOffenseCoefficient)}: {banRepeatedOffenseCoefficient}, {nameof(banRepeatedOffenseMax)}: {banRepeatedOffenseMax}, {nameof(neverBanSubnets)}: [{{{string.Join("}, {", neverBanSubnets ?? Array.Empty<IPNetwork2>())}}}], {nameof(eventLogSelectors)}: [{{{string.Join("}, {", eventLogSelectors)}}}], {nameof(isDryRun)}: {isDryRun}, {nameof(logLevel)}: {logLevel}";
+        $"{nameof(maxAllowedFailures)}: {maxAllowedFailures}, {nameof(failureWindow)}: {failureWindow}, {nameof(banPeriod)}: {banPeriod}, {nameof(banSubnetBits)}: {banSubnetBits}, {nameof(banRepeatedOffenseCoefficient)}: {banRepeatedOffenseCoefficient}, {nameof(banRepeatedOffenseMax)}: {banRepeatedOffenseMax}, {nameof(neverBanSubnets)}: [{{{string.Join("}, {", neverBanSubnets ?? Array.Empty<IPNetwork2>())}}}], {nameof(neverBanReservedSubnets)}: {neverBanReservedSubnets}, {nameof(unbanAllOnStartup)}: {unbanAllOnStartup}, {nameof(eventLogSelectors)}: [{{{string.Join("}, {", eventLogSelectors)}}}], {nameof(isDryRun)}: {isDryRun}, {nameof(logLevel)}: {logLevel}";
 
     public object Clone() => new Configuration {
         isDryRun                      = isDryRun,
@@ -36,6 +39,8 @@ public class Configuration: ICloneable {
         banRepeatedOffenseMax         = banRepeatedOffenseMax,
         logLevel                      = logLevel,
         neverBanSubnets               = neverBanSubnets is not null ? new List<IPNetwork2>(neverBanSubnets) : null,
+        neverBanReservedSubnets       = neverBanReservedSubnets,
+        unbanAllOnStartup             = unbanAllOnStartup,
         eventLogSelectors             = eventLogSelectors.Select(selector => (EventLogSelector) selector.Clone()).ToList()
     };
 

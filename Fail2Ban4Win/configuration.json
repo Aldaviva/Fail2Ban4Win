@@ -12,6 +12,7 @@
 		"73.202.12.148/32"
 	],
 	"neverBanReservedSubnets": true,
+	"unbanAllOnStartup": true,
 	"eventLogSelectors": [
 		{
 			"logName": "Security",
