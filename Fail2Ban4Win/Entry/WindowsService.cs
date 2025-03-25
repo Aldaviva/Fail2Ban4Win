@@ -1,11 +1,9 @@
 ﻿#nullable enable
 
-using System.Reflection;
-using System.ServiceProcess;
 using Fail2Ban4Win.Services;
 using LightInject;
-using NLog;
-using NLog.Config;
+using System.Reflection;
+using System.ServiceProcess;
 
 namespace Fail2Ban4Win.Entry;
 
@@ -23,7 +21,6 @@ public partial class WindowsService: ServiceBase {
         context.RegisterAssembly(Assembly.GetCallingAssembly());
         scope = context.BeginScope();
 
-        LogManager.Configuration = scope.GetInstance<LoggingConfiguration>();
         scope.GetInstance<BanManager>();
     }
 

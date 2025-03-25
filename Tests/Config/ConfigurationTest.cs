@@ -11,7 +11,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Abstractions;
-using LogLevel = NLog.LogLevel;
 
 namespace Tests.Config;
 
@@ -64,8 +63,7 @@ public class ConfigurationTest: IDisposable {
                                             "eventPredicate": "[EventData/Data[@Name='sc-status']=403]"
                                         }
                                 	],
-                                    "isDryRun": true,
-                                    "logLevel": "info"
+                                    "isDryRun": true
                                 }
                                 """;
 
@@ -87,7 +85,6 @@ public class ConfigurationTest: IDisposable {
         Assert.Equal(1.5, actual.banRepeatedOffenseCoefficient!.Value);
         Assert.Equal(4, actual.banRepeatedOffenseMax!.Value);
         Assert.True(actual.isDryRun);
-        Assert.Equal(LogLevel.Info, actual.logLevel);
         Assert.Contains(IPNetwork2.Parse("127.0.0.1/8"), actual.neverBanSubnets!);
         Assert.Contains(IPNetwork2.Parse("192.168.1.0/24"), actual.neverBanSubnets!);
         Assert.Contains(IPNetwork2.Parse("67.210.32.33/32"), actual.neverBanSubnets!);

@@ -4,7 +4,6 @@ using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Facades;
 using Fail2Ban4Win.Services;
 using FakeItEasy;
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -24,7 +23,6 @@ public class EventLogListenerTest: IDisposable {
         failureWindow      = TimeSpan.FromSeconds(2),
         banPeriod          = TimeSpan.FromSeconds(5),
         banSubnetBits      = 8,
-        logLevel           = LogLevel.Trace,
         maxAllowedFailures = 2,
         neverBanSubnets    = [IPNetwork2.Parse("73.202.12.148/32")],
         eventLogSelectors = [

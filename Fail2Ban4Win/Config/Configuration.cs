@@ -1,6 +1,5 @@
 ﻿#nullable enable
 
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,14 +19,13 @@ public class Configuration: ICloneable {
     public byte? banSubnetBits { get; set; }
     public double? banRepeatedOffenseCoefficient { get; set; }
     public int? banRepeatedOffenseMax { get; set; }
-    public LogLevel? logLevel { get; set; }
     public ICollection<IPNetwork2>? neverBanSubnets { get; set; }
     public bool neverBanReservedSubnets { get; set; } = true;
     public bool unbanAllOnStartup { get; set; } = true;
     public ICollection<EventLogSelector> eventLogSelectors { get; set; } = null!;
 
     public override string ToString() =>
-        $"{nameof(maxAllowedFailures)}: {maxAllowedFailures}, {nameof(failureWindow)}: {failureWindow}, {nameof(banPeriod)}: {banPeriod}, {nameof(banSubnetBits)}: {banSubnetBits}, {nameof(banRepeatedOffenseCoefficient)}: {banRepeatedOffenseCoefficient}, {nameof(banRepeatedOffenseMax)}: {banRepeatedOffenseMax}, {nameof(neverBanSubnets)}: [{{{string.Join("}, {", neverBanSubnets ?? Array.Empty<IPNetwork2>())}}}], {nameof(neverBanReservedSubnets)}: {neverBanReservedSubnets}, {nameof(unbanAllOnStartup)}: {unbanAllOnStartup}, {nameof(eventLogSelectors)}: [{{{string.Join("}, {", eventLogSelectors)}}}], {nameof(isDryRun)}: {isDryRun}, {nameof(logLevel)}: {logLevel}";
+        $"{nameof(maxAllowedFailures)}: {maxAllowedFailures}, {nameof(failureWindow)}: {failureWindow}, {nameof(banPeriod)}: {banPeriod}, {nameof(banSubnetBits)}: {banSubnetBits}, {nameof(banRepeatedOffenseCoefficient)}: {banRepeatedOffenseCoefficient}, {nameof(banRepeatedOffenseMax)}: {banRepeatedOffenseMax}, {nameof(neverBanSubnets)}: [{{{string.Join("}, {", neverBanSubnets ?? Array.Empty<IPNetwork2>())}}}], {nameof(neverBanReservedSubnets)}: {neverBanReservedSubnets}, {nameof(unbanAllOnStartup)}: {unbanAllOnStartup}, {nameof(eventLogSelectors)}: [{{{string.Join("}, {", eventLogSelectors)}}}], {nameof(isDryRun)}: {isDryRun}";
 
     public object Clone() => new Configuration {
         isDryRun                      = isDryRun,
@@ -37,7 +35,6 @@ public class Configuration: ICloneable {
         banSubnetBits                 = banSubnetBits,
         banRepeatedOffenseCoefficient = banRepeatedOffenseCoefficient,
         banRepeatedOffenseMax         = banRepeatedOffenseMax,
-        logLevel                      = logLevel,
         neverBanSubnets               = neverBanSubnets is not null ? new List<IPNetwork2>(neverBanSubnets) : null,
         neverBanReservedSubnets       = neverBanReservedSubnets,
         unbanAllOnStartup             = unbanAllOnStartup,

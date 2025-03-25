@@ -60,7 +60,6 @@
     <Compile Include="Facades\FirewallFacade.cs" />
     <Compile Include="Injection\ConfigurationModule.cs" />
     <Compile Include="Injection\FacadeModules.cs" />
-    <Compile Include="Injection\LoggingModule.cs" />
     <Compile Include="Injection\ServiceModules.cs" />
     <Compile Include="Data\ArrayListSubnetFailureHistory.cs" />
     <Compile Include="Services\BanManager.cs" />
@@ -85,6 +84,9 @@
     <None Include="Install service.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.lock.json" />
   </ItemGroup>
   <ItemGroup>
@@ -97,7 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ILRepack.Lib.MSBuild.Task">
-      <Version>2.0.37</Version>
+      <Version>2.0.40</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -108,10 +110,10 @@
       <Version>7.0.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder">
-      <Version>9.0.2</Version>
+      <Version>9.0.3</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json">
-      <Version>9.0.2</Version>
+      <Version>9.0.3</Version>
     </PackageReference>
     <PackageReference Include="NLog">
       <Version>5.4.0</Version>
