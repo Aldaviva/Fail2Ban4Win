@@ -127,7 +127,6 @@ In this example, we will go through the process of creating an event for Windows
     ```
 1. You can add this object to `configuration.json` by appending it to the `eventLogSelectors` array.
 
-
 ## Running
 Do any of the following.
 - Start the `Fail2Ban4Win` service from the `services.msc` GUI.
