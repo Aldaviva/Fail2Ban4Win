@@ -97,7 +97,7 @@ In this example, we will go through the process of creating an event for Windows
     1. Select Add a feature.
     1. Install OpenSSH Server.
 1. Open Event Viewer (`eventvwr.msc`).
-1. Find an instance of the event you want. If one doesn't exist, start an SSH client like [ssh](https://linux.die.net/man/1/ssh) or [KiTTY](http://www.9bis.net/kitty/) and fail to authenticate on purpose.
+1. Find an instance of the event you want. If one doesn't exist, start an SSH client like [ssh](https://linux.die.net/man/1/ssh) or [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) and fail to authenticate on purpose.
     ![Event Viewer with OpenSSH failure event, General tab](https://i.imgur.com/YZsr8H5.png)
 1. The `logName` value of the event log selector object comes from the **Log Name** shown here, in this case, `OpenSSH/Operational`.
 1. The optional `source` value comes from the **Source** shown here, in this case, `OpenSSH`. You can also omit `source` in this case because all events in this log have the same Source.
@@ -147,7 +147,7 @@ You can see the block rules created by Fail2Ban4Win in Windows Firewall.
 ## Acknowledgments
 - My parents for free Windows Server hosting with a static IP address for anyone to connect to.
 - A vague awareness of the existence of [`fail2ban`](https://www.fail2ban.org) that convinced me that non-stop RDP and SSH login attempts might have a solution.
-- [`wail2ban` by Katie McLaughlin (`glasnt`)](https://github.com/glasnt/wail2ban) for being archived and motivating me to creating my own non-archived implementation.
+- [`wail2ban` by Katie McLaughlin (`glasnt`)](https://github.com/glasnt/wail2ban) for being archived and motivating me to create my own non-archived implementation.
 - [`win2ban`](https://itefix.net/win2ban) for charging twenty-nine American dollars for some cobbled together free open-source projects that made me indignant enough to create my own free, open-source, clean-room implementation.
 - [Soroush (`falahati`)](https://github.com/falahati/WindowsFirewallHelper) for the excellent .NET wrapper for the Windows Firewall COM API.
 - [Robert Mustacchi (`rmustacc`)](https://github.com/rmustacc) for talking me out of trying to implement a wait-free list to store failure times and instead continuing to lock array lists.
