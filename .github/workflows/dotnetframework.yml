@@ -57,9 +57,9 @@ jobs:
           name: ${{ env.PROJECT_NAME }}
           path: |
             ${{ env.PROJECT_NAME }}\bin\Release\repacked\${{ env.PROJECT_NAME }}.exe*
-            ${{ env.PROJECT_NAME }}\bin\Release\Install service.ps1
-            ${{ env.PROJECT_NAME }}\bin\Release\configuration.json
-            ${{ env.PROJECT_NAME }}\bin\Release\NLog.config
+            ${{ env.PROJECT_NAME }}\bin\Release\repacked\Install service.ps1
+            ${{ env.PROJECT_NAME }}\bin\Release\repacked\configuration.json
+            ${{ env.PROJECT_NAME }}\bin\Release\repacked\NLog.config
           if-no-files-found: error
 
       - name: Upload unpacked artifacts

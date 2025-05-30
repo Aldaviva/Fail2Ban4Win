@@ -16,6 +16,10 @@
         TargetKind="SameAsPrimaryAssembly"
         OutputFile="$(OutputPath)\repacked\$(TargetName)$(TargetExt)" />
 
+    <Copy
+        SourceFiles="$(OutputPath)\configuration.json;$(OutputPath)\NLog.config;$(OutputPath)\Install service.ps1"
+        DestinationFolder="$(OutputPath)\repacked\" />
+          
   </Target>
 
   <!--<Target
