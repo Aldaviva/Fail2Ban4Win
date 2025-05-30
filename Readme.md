@@ -42,7 +42,10 @@ You can [customize](#configuration) most of the above specifics.
 - Use Windows Firewall, as opposed to a third-party firewall solution
 
 ## Installation
-1. Download the [latest release](https://github.com/Aldaviva/Fail2Ban4Win/releases) ZIP file (`Fail2Ban4Win.zip`).
+1. Download the [latest release](https://github.com/Aldaviva/Fail2Ban4Win/releases/latest). You have artifact options to choose from:
+    - [**`Fail2Ban4Win.zip`**](https://github.com/Aldaviva/Fail2Ban4Win/releases/latest/download/Fail2Ban4Win.zip) — Single big EXE file
+    - [**`Fail2Ban4Win-unpacked.zip`**](https://github.com/Aldaviva/Fail2Ban4Win/releases/latest/download/Fail2Ban4Win-unpacked.zip) — Folder full of DLLs, which may reduce antivirus false positives
+    <div>The file structure is the only difference. Both artifacts are otherwise equivalent and have the same behavior, features, and bugs.</div>
 1. Extract the contents of the ZIP file to a directory like `C:\Program Files (x86)\Fail2Ban4Win\`.
 1. Open an elevated PowerShell window (run it as administrator).
 1. Allow PowerShell scripts to run until you close the window.
@@ -56,10 +59,11 @@ You can [customize](#configuration) most of the above specifics.
 1. Configure the service in the next section before starting it.
 
 ### Upgrade
-1. Download the [latest release](https://github.com/Aldaviva/Fail2Ban4Win/releases) ZIP file (`Fail2Ban4Win.zip`).
-1. Extract `Fail2Ban4Win.exe` from the ZIP file to the installation directory.
-    - Don't overwrite config files like `configuration.json` or `NLog.config`.
-1. Restart the service using `services.msc` (GUI), `Restart-Service Fail2Ban4Win` (PowerShell), or `net stop Fail2Ban4Win & net start Fail2Ban4Win` (Command Prompt).
+1. Download the [latest release](https://github.com/Aldaviva/Fail2Ban4Win/releases/latest), as [described above](#installation).
+2. Extract the ZIP file to the installation directory.
+> [!CAUTION]
+> Don't overwrite config files like `configuration.json` or `NLog.config`.
+3. Restart the service using `services.msc` (GUI), `Restart-Service Fail2Ban4Win` (PowerShell), or `net stop Fail2Ban4Win & net start Fail2Ban4Win` (Command Prompt).
 
 ## Configuration
 The provided example configuration file has selectors for [Remote Desktop Services](https://docs.microsoft.com/en-us/windows/win32/termserv/terminal-services-portal), [Cygwin OpenSSH sshd](https://cygwin.com/packages/summary/openssh.html) (updated in [1.3.1](https://github.com/Aldaviva/Fail2Ban4Win/releases/tag/1.3.1)), and [Windows OpenSSH sshd](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview) (updated in [1.3.1](https://github.com/Aldaviva/Fail2Ban4Win/releases/tag/1.3.1)). It also has some example values for `neverBanSubnets` and other properties that you can replace with your own values.

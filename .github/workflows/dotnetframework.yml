@@ -51,12 +51,24 @@ jobs:
       - name: Stop if tests failed
         run: exit $env:TEST_EXIT_CODE
 
-      - name: Upload artifacts
+      - name: Upload packed artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PROJECT_NAME }}
           path: |
+            ${{ env.PROJECT_NAME }}\bin\Release\repacked\${{ env.PROJECT_NAME }}.exe*
+            ${{ env.PROJECT_NAME }}\bin\Release\Install service.ps1
+            ${{ env.PROJECT_NAME }}\bin\Release\configuration.json
+            ${{ env.PROJECT_NAME }}\bin\Release\NLog.config
+          if-no-files-found: error
+
+      - name: Upload unpacked artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME }}-unpacked
+          path: |
             ${{ env.PROJECT_NAME }}\bin\Release\${{ env.PROJECT_NAME }}.exe*
+            ${{ env.PROJECT_NAME }}\bin\Release\*.dll
             ${{ env.PROJECT_NAME }}\bin\Release\Install service.ps1
             ${{ env.PROJECT_NAME }}\bin\Release\configuration.json
             ${{ env.PROJECT_NAME }}\bin\Release\NLog.config
