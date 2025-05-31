@@ -54,7 +54,7 @@ You can [customize](#configuration) most of the above specifics.
     ```
 1. Register Fail2Ban4Win as a service.
     ```ps1
-    & 'C:\Program Files (x86)\Fail2Ban4Win\Install Service.ps1'
+    & 'C:\Program Files (x86)\Fail2Ban4Win\Install service.ps1'
     ```
 1. Configure the service in the next section before starting it.
 
