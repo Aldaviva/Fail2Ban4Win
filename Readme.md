@@ -24,7 +24,7 @@ You can customize the duration of the ban, the type of Event Log events to detec
 
 ## Behavior
 
-1. Fail2Ban4Win runs in the background as a Windows service.
+1. Fail2Ban4Win runs in the background as a Windows Service.
 1. Configuration comes from a JSON file in the installation directory.
 1. Fail2Ban4Win listens for Event Log events from various logs and event IDs.
 1. When a matching event is created, Fail2Ban4Win extracts the client's IP address from the event data. The IP address is aggregated into a /24 subnet IP range.
@@ -37,8 +37,8 @@ You can customize the duration of the ban, the type of Event Log events to detec
 You can [customize](#configuration) most of the above specifics.
 
 ## Requirements
-- Windows 7 or later, or Windows Server 2008 R2 or later
-- [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework) or later
+- Windows 7 SP1, Windows Server 2008 R2 SP1, or later
+- [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework) or later, which are included in Windows 10 1803 (April 2018 Update), Windows Server 2019, and later
 - Use Windows Firewall, as opposed to a third-party firewall solution
 
 ## Installation
@@ -79,7 +79,7 @@ The provided example configuration file has selectors for [Remote Desktop Servic
     |`maxAllowedFailures`|`9`|If an IP range (of size `banSubnetBits`) exceeds this number of failures during the `failureWindow`, it will be banned. By default, the **10**<sup>th</sup> failure is a ban.|
     |`failureWindow`|`1.00:00:00` (1 day)|How long to consider auth failures. By default, 10 failures in **1 day** results in a ban. The format is `d.hh:mm:ss`.|
     |`banPeriod`|`1.00:00:00` (1 day)|After enough failures, the IP range will be banned by adding a Windows Firewall block rule, which will be removed after this period of time. The format is `d.hh:mm:ss`. By default, a ban lasts **1 day**.|
-    |`banSubnetBits`|`0`|Optional CIDR subnet aggregation size when counting failures and blocking traffic. The example value of `8` bits blocks the /24 subnet, or 255.255.255.0. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to /32.|
+    |`banSubnetBits`|`0`|Optional CIDR subnet aggregation size when both counting failures and blocking traffic. The example value of `8` bits blocks the /24 subnet, or 255.255.255.0. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to /32.|
     |`banRepeatedOffenseCoefficient`|`0.0`|How much of the `banPeriod` to add on subsequent offenses (optional). The default `banPeriod` of 1 day and example coefficient of `1.0` results in a 1 day ban for first offenders, 2 days for 2<sup>nd</sup> offenders, 3 days for 3<sup>rd</sup> offenders, and 4 days for 4<sup>th</sup> offenders or greater. Changing this coefficient from 1.0 to 2.0 would result in successive ban durations of 1 day, 3 days, 5 days, and 7 days instead. Defaults to all subsequent bans having the same duration as initial bans.|
     |`banRepeatedOffenseMax`|`4`|An optional limit on how many repeated offenses can be used to calculate ban duration. By default, the 5<sup>th</sup> offense and subsequent bans will be capped at the same duration as the **4**<sup>th</sup> offense ban, which is 4 days.|
     |`neverBanSubnets`|`[]`|Optional whitelist of IP ranges that should never be banned, regardless of how many auth failures they generate. Each item can be a single IP address, like `67.210.32.33`, or a range, like `67.210.32.0/24`.|
@@ -98,7 +98,7 @@ In this example, we will go through the process of creating an event for Windows
 
 1. Ensure OpenSSH Server is installed and running in Windows.
     1. Run `explorer.exe ms-settings:optionalfeatures` or go to Settings › Apps › Apps & features › Manage optional features.
-    1. Select Add a feature.
+    1. Click Add a feature or View features.
     1. Install OpenSSH Server.
 1. Open Event Viewer (`eventvwr.msc`).
 1. Find an instance of the event you want. If one doesn't exist, start an SSH client like [ssh](https://linux.die.net/man/1/ssh) or [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) and fail to authenticate on purpose.
@@ -112,14 +112,14 @@ In this example, we will go through the process of creating an event for Windows
     ```xml
     <Data Name="payload">Failed password for invalid user foo bar from 192.168.1.7 port 49721 ssh2</Data>
     ```
-1. The `ipAddressEventDataName` value comes from the `<Data>` element that contains the IP address in its text content. In this case, that element has the `Name` attribute value of **`payload`**.
+1. The `ipAddressEventDataName` value comes from the `Name` attribute value of the `<Data>` element which contains the IP address in its text content, in this case, `payload`.
     - If there were just one `<Data>` element with no `Name` attribute, you would omit the `ipAddressEventDataName` property from the event log selector object.
     - If there were multiple `<Data>` elements with no `Name` attributes, you would omit the `ipAddressEventDataName` property and set `ipAddressEventDataIndex` to the position of the desired `Data` element (where the first `Data` child of the `EventData` element would have index 0).
-1. The `ipAddressPattern` helps narrow down which events represent auth failures. Some events in this log with ID 4 are caused by successful auth attempts or disconnections, which should not trigger firewall bans. By matching the text of an auth failure, the correct events will be processed. The [following pattern](https://regex101.com/r/ZdJqcT/1) matches only auth failures and captures the IP address in a named group for processing.
+1. The `ipAddressPattern` helps narrow down which events represent auth failures. Some events in this log with ID 4 are caused by successful auth attempts or disconnections, which should not trigger firewall bans. By matching the text of an auth failure, only the correct events will be processed. The [following pattern](https://regex101.com/r/ZdJqcT/5) matches only auth failures and captures the IP address in a named group for processing.
     ```regex
     ^Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\d{1,3}\.){3}\d{1,3}) port \d{1,5} ssh\d?$
     ```
-1. Here is the resulting event log selector from all of the above properties.
+1. Here is the resulting event log selector object from all of the above properties.
     ```json
     {
         "logName": "OpenSSH/Operational",
@@ -129,7 +129,7 @@ In this example, we will go through the process of creating an event for Windows
         "ipAddressPattern": "^Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5} ssh\\d?$"
     }
     ```
-1. You can add this object to `configuration.json` by appending it to the `eventLogSelectors` array.
+1. You can add this selector object to `configuration.json` by appending it to the `eventLogSelectors` array.
 
 ## Running
 Do any of the following.
