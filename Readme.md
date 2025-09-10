@@ -28,13 +28,13 @@ You can customize the duration of the ban, the type of Event Log events to detec
 1. Configuration comes from a JSON file in the installation directory.
 1. Fail2Ban4Win listens for Event Log events from various logs and event IDs.
 1. When a matching event is created, Fail2Ban4Win extracts the client's IP address from the event data. The IP address is aggregated into a /24 subnet IP range.
-1. Fail2Ban4Win keeps track of how many times each subnet has triggered auth failures over the last 24 hours.
-1. When a given subnet has failed to authenticate 10 times in the last 24 hours, a Windows Firewall rule is created to block incoming traffic from that subnet on all ports.
+1. Fail2Ban4Win keeps track of how many times each subnet (not each IP address) has triggered auth failures over the last 24 hours.
+1. When a given subnet has failed to authenticate 10 times in the last 24 hours across all Event Log selectors, a Windows Firewall rule is created to block incoming traffic from that subnet on all ports.
 1. After being banned for 1 day, the firewall rule is deleted and the subnet is allowed to fail 10 more times before being banned a second time.
 1. Each time a subnet is repeatedly banned, the ban duration increases by 1 day, up to a maximum of a 4 day ban, after which each subsequent ban will always be 4 days.
-1. When Fail2Ban4Win restarts, it deletes all firewall rules it created and starts from scratch. This allows it to fail open and avoids persisting the failure history.
+1. When Fail2Ban4Win restarts, it deletes all firewall rules it created and starts from scratch. This allows it to fail open.
 
-You can [customize](#configuration) most of the above specifics.
+You can [customize](#configuration) most of the above specifics to suit your banning needs.
 
 ## Requirements
 - Windows 7 SP1, Windows Server 2008 R2 SP1, or later
@@ -97,9 +97,13 @@ You can configure this logging by editing `NLog.config` in the Fail2Ban4Win inst
 In this example, we will go through the process of creating an event for Windows OpenSSH sshd. This event is already supported in the example configuration file, but the following process covers all of the necessary steps to add any other event.
 
 1. Ensure OpenSSH Server is installed and running in Windows.
-    1. Run `explorer.exe ms-settings:optionalfeatures` or go to Settings › Apps › Apps & features › Manage optional features.
-    1. Click Add a feature or View features.
-    1. Install OpenSSH Server.
+    - Install the [latest sshd version from Microsoft's PowerShell/Win32-OpenSSH](https://github.com/PowerShell/Win32-OpenSSH/releases), which has important security fixes that are often missing from the older built-in version below (for Terrapin, VerifyHostKeyDNS, and DoS attacks).
+    - Otherwise, install OpenSSH Server in the Windows Settings app (`explorer.exe ms-settings:optionalfeatures`):
+        - **Windows 10**: System › Optional features › Add a feature › OpenSSH Server
+        - **Windows 11**: System › Optional features › View features › See available features › OpenSSH server
+        - **Windows Server 2019**: Apps › Apps & features › Manage optional features › Add a feature › OpenSSH Server
+        - **Windows Server 2022**: Apps › Apps & features › Optional features › Add a feature › OpenSSH Server
+        - **Windows Server 2025**: OpenSSH Server is preinstalled, so start the `sshd` service and set its startup type to Automatic
 1. Open Event Viewer (`eventvwr.msc`).
 1. Find an instance of the event you want. If one doesn't exist, start an SSH client like [ssh](https://linux.die.net/man/1/ssh) or [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) and fail to authenticate on purpose.
     ![Event Viewer with OpenSSH failure event, General tab](https://i.imgur.com/YZsr8H5.png)
