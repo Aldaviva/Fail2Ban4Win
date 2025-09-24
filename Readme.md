@@ -5,7 +5,7 @@
 
 Fail2Ban4Win is a background service that temporarily blocks IP ranges in Windows Firewall when enough authentication errors appear in Event Log in a given time period for those IP ranges.
 
-You can customize the duration of the ban, the type of Event Log events to detect, and other options. The example configuration file will set Fail2Ban4Win to ban a /24 subnet for 24 hours after 10 failures to authenticate to either Remote Desktop Services or sshd.
+You can customize the duration of the ban, the type of Event Log events to detect, and other options. The example configuration file will set Fail2Ban4Win to ban a /24 subnet for 24 hours after 10 failures to authenticate to Remote Desktop Services, sshd, or both.
 
 <!-- MarkdownTOC autolink="true" bracket="round" autoanchor="false" levels="1,2,3" style="ordered" -->
 
@@ -26,9 +26,9 @@ You can customize the duration of the ban, the type of Event Log events to detec
 
 1. Fail2Ban4Win runs in the background as a Windows Service.
 1. Configuration comes from a JSON file in the installation directory.
-1. Fail2Ban4Win listens for Event Log events from various logs and event IDs.
-1. When a matching event is created, Fail2Ban4Win extracts the client's IP address from the event data. The IP address is aggregated into a /24 subnet IP range.
-1. Fail2Ban4Win keeps track of how many times each subnet (not each IP address) has triggered auth failures over the last 24 hours.
+1. Fail2Ban4Win listens for Windows Event Log events from various logs and event IDs.
+1. When a matching event is logged by your server software, Fail2Ban4Win extracts the client's IP address from the event data. The IP address is aggregated into a /24 subnet IP range.
+1. Fail2Ban4Win keeps track of how many times each subnet (not each IP address) has triggered auth failures (cumulatively, not per event ID) over the last 24 hours.
 1. When a given subnet has failed to authenticate 10 times in the last 24 hours across all Event Log selectors, a Windows Firewall rule is created to block incoming traffic from that subnet on all ports.
 1. After being banned for 1 day, the firewall rule is deleted and the subnet is allowed to fail 10 more times before being banned a second time.
 1. Each time a subnet is repeatedly banned, the ban duration increases by 1 day, up to a maximum of a 4 day ban, after which each subsequent ban will always be 4 days.
@@ -78,9 +78,9 @@ The provided example configuration file has selectors for [Remote Desktop Servic
     |`isDryRun`|`false`|Firewall rules will only be created or deleted when this is `false`.|
     |`maxAllowedFailures`|`9`|If an IP range (of size `banSubnetBits`) exceeds this number of failures during the `failureWindow`, it will be banned. By default, the **10**<sup>th</sup> failure is a ban.|
     |`failureWindow`|`1.00:00:00` (1 day)|How long to consider auth failures. By default, 10 failures in **1 day** results in a ban. The format is `d.hh:mm:ss`.|
-    |`banPeriod`|`1.00:00:00` (1 day)|After enough failures, the IP range will be banned by adding a Windows Firewall block rule, which will be removed after this period of time. The format is `d.hh:mm:ss`. By default, a ban lasts **1 day**.|
+    |`banPeriod`|`1.00:00:00` (1 day)|After enough failures, the IP range will be banned by adding a Windows Firewall block rule, which will then be removed after this period of time. The format is `d.hh:mm:ss`. By default, a ban lasts **1 day**.|
     |`banSubnetBits`|`0`|Optional CIDR subnet aggregation size when both counting failures and blocking traffic. The example value of `8` bits blocks the /24 subnet, or 255.255.255.0. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to /32.|
-    |`banRepeatedOffenseCoefficient`|`0.0`|How much of the `banPeriod` to add on subsequent offenses (optional). The default `banPeriod` of 1 day and example coefficient of `1.0` results in a 1 day ban for first offenders, 2 days for 2<sup>nd</sup> offenders, 3 days for 3<sup>rd</sup> offenders, and 4 days for 4<sup>th</sup> offenders or greater. Changing this coefficient from 1.0 to 2.0 would result in successive ban durations of 1 day, 3 days, 5 days, and 7 days instead. Defaults to all subsequent bans having the same duration as initial bans.|
+    |`banRepeatedOffenseCoefficient`|`0.0`|How much of the `banPeriod` to add on subsequent offenses (optional). The default `banPeriod` of 1 day and example coefficient of 1.0 results in a 1 day ban for first offenders, 2 days for 2<sup>nd</sup> offenders, 3 days for 3<sup>rd</sup> offenders, and 4 days for 4<sup>th</sup> offenders or greater. Changing this coefficient from `1.0` to `2.0` would result in successive ban durations of 1 day, 3 days, 5 days, and 7 days instead. Defaults to all subsequent bans having the same duration as initial bans.|
     |`banRepeatedOffenseMax`|`4`|An optional limit on how many repeated offenses can be used to calculate ban duration. By default, the 5<sup>th</sup> offense and subsequent bans will be capped at the same duration as the **4**<sup>th</sup> offense ban, which is 4 days.|
     |`neverBanSubnets`|`[]`|Optional whitelist of IP ranges that should never be banned, regardless of how many auth failures they generate. Each item can be a single IP address, like `67.210.32.33`, or a range, like `67.210.32.0/24`.|
     |`neverBanReservedSubnets`|`true`|By default, IP addresses in the reserved blocks `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16` will not be banned, to avoid unintentionally blocking LAN access. To allow all three ranges to be banned, change this to `false`. To then selectively prevent some of those ranges from getting banned, you may add them to the `neverBanSubnets` list above. The loopback addresses 127.0.0.0/8 will never be banned, regardless of this setting.|
@@ -89,7 +89,7 @@ The provided example configuration file has selectors for [Remote Desktop Servic
 1. After saving the configuration file, restart the Fail2Ban4Win service using `services.msc` (GUI), `Restart-Service Fail2Ban4Win` (PowerShell), or `net stop Fail2Ban4Win & net start Fail2Ban4Win` (Command Prompt) for your changes to take effect. Note that the service will clear existing bans when it starts (unless you changed `unbanAllOnStartup` to `false`).
 
 ### Logging
-Fail2Ban4Win uses [NLog](https://nlog-project.org) to log messages. By default, it logs messages of Info severity and above to `logs\Fail2Ban4Win.log` in the installation directory.
+Fail2Ban4Win uses [NLog](https://nlog-project.org) to log messages. By default, messages of Info severity and above are written to `logs\Fail2Ban4Win.log` in the installation directory.
 
 You can configure this logging by editing `NLog.config` in the Fail2Ban4Win installation directory. See NLog documentation for this [XML config file](https://github.com/nlog/NLog/wiki/Configuration-file), the [format of log messages](https://nlog-project.org/config/?tab=layout-renderers), [file handling](https://github.com/nlog/NLog/wiki/File-target), and [other places to write logs besides a local file](https://nlog-project.org/config/?tab=targets).
 
@@ -140,7 +140,7 @@ Do any of the following.
 - Start the `Fail2Ban4Win` service from the `services.msc` GUI.
 - Start the service from PowerShell using `Start-Service Fail2Ban4Win`.
 - Start the service from Command Prompt using `net start Fail2Ban4Win`.
-- Run the service in the foreground by starting `Fail2Ban4Win.exe` in a console window. This is useful for looking at the log output and verifying your configuration, especially when `isDryRun` is true. You can stop the process using `Ctrl`+`C`.
+- Run the service in the foreground by starting `Fail2Ban4Win.exe` in a console window. This is useful for looking at the log output and verifying your configuration, especially when `isDryRun` is true. You can stop the process using <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 
 ## Monitoring
 You can see the block rules created by Fail2Ban4Win in Windows Firewall.
@@ -156,6 +156,6 @@ You can see the block rules created by Fail2Ban4Win in Windows Firewall.
 - My parents for free Windows Server hosting with a static IP address for anyone to connect to.
 - A vague awareness of the existence of [`fail2ban`](https://www.fail2ban.org) that convinced me that non-stop RDP and SSH login attempts might have a solution.
 - [`wail2ban` by Katie McLaughlin (`glasnt`)](https://github.com/glasnt/wail2ban) for being archived and motivating me to create my own non-archived implementation.
-- [`win2ban`](https://itefix.net/win2ban) for charging twenty-nine American dollars for some cobbled together free open-source projects that made me indignant enough to create my own free, open-source, clean-room implementation.
+- [`win2ban`](https://itefix.net/win2ban) for charging an entire fourty-nine American dollars for some cobbled together free open-source projects, which made me indignant enough to create my own free, open-source, clean-room implementation.
 - [Soroush (`falahati`)](https://github.com/falahati/WindowsFirewallHelper) for the excellent .NET wrapper for the Windows Firewall COM API.
 - [Robert Mustacchi (`rmustacc`)](https://github.com/rmustacc) for talking me out of trying to implement a wait-free list to store failure times and instead continuing to lock array lists.
