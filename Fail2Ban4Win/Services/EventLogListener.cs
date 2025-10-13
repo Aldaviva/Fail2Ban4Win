@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Data;
@@ -84,7 +84,8 @@ public class EventLogListenerImpl: EventLogListener {
                     IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>().Select(match => IPAddress.Parse(match.Groups["ipAddress"].Value));
 
                     foreach (IPAddress failingIpAddress in failingIpAddresses) {
-                        LOGGER.Info("Authentication failure detected from {addr} (log={log}, event={id}, source={source})", failingIpAddress, record.LogName, record.Id, record.ProviderName);
+                        LOGGER.Info("Authentication failure detected from {addr}{selector} (log={log}, event={id}, source={source})", failingIpAddress,
+                            selector.selectorName != null ? $" using selector {selector.selectorName}" : string.Empty, record.LogName, record.Id, record.ProviderName);
                         failure?.Invoke(this, failingIpAddress);
                     }
                 }

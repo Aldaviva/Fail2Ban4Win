@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -45,6 +45,7 @@ public class Configuration: ICloneable {
 
 public class EventLogSelector: ICloneable {
 
+    public string? selectorName { get; set; }
     public string logName { get; set; } = null!;
     public string? source { get; set; }
     public int eventId { get; set; }
@@ -54,9 +55,10 @@ public class EventLogSelector: ICloneable {
     public string? eventPredicate { get; set; }
 
     public override string ToString() =>
-        $"{nameof(logName)}: {logName}, {nameof(source)}: {source}, {nameof(eventId)}: {eventId}, {nameof(ipAddressPattern)}: {ipAddressPattern}, {nameof(ipAddressEventDataName)}: {ipAddressEventDataName}, {nameof(ipAddressEventDataIndex)}: {ipAddressEventDataIndex}, {nameof(eventPredicate)}: {eventPredicate}";
+        $"{nameof(selectorName)}: {selectorName}, {nameof(logName)}: {logName}, {nameof(source)}: {source}, {nameof(eventId)}: {eventId}, {nameof(ipAddressPattern)}: {ipAddressPattern}, {nameof(ipAddressEventDataName)}: {ipAddressEventDataName}, {nameof(ipAddressEventDataIndex)}: {ipAddressEventDataIndex}, {nameof(eventPredicate)}: {eventPredicate}";
 
     public object Clone() => new EventLogSelector {
+        selectorName            = selectorName,
         ipAddressEventDataName  = ipAddressEventDataName,
         eventId                 = eventId,
         ipAddressPattern        = ipAddressPattern is not null ? new Regex(ipAddressPattern.ToString(), ipAddressPattern.Options, ipAddressPattern.MatchTimeout) : null,

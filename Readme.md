@@ -87,7 +87,7 @@ The provided example configuration file has selectors for [Remote Desktop Servic
     |`neverBanSubnets`|`[]`|Optional whitelist of IP ranges that should never be banned, regardless of how many auth failures they generate. Each item can be a single IP address, like `67.210.32.33`, or a range, like `67.210.32.0/24`.|
     |`neverBanReservedSubnets`|`true`|By default, IP addresses in the reserved blocks `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16` will not be banned, to avoid unintentionally blocking LAN access. To allow all three ranges to be banned, change this to `false`. To then selectively prevent some of those ranges from getting banned, you may add them to the `neverBanSubnets` list above. The loopback addresses 127.0.0.0/8 will never be banned, regardless of this setting.|
     |`unbanAllOnStartup`|`true`|Whether Fail2Ban4Win should, when it launches, delete all of its existing firewall rules which it previously created. This is **`true`** by default, to fail open. To preserve existing bans, _e.g._ after a computer reboot, set this to `false`. When resuming existing unban timers, the duration is corrected for the time Fail2Ban4Win wasn't running. Unrelated firewall rules (Windows defaults, your custom rules) are never touched, regardless of this setting.|
-    |`eventLogSelectors`|`[]`|Required list of events to listen for in Event Log. Each object in the list can have the following properties.<ul><li>`logName`: required, which log in Event Viewer contains the events, _e.g._ `Application`, `Security`, `OpenSSH/Operational`.</li><li>`eventId`: required, numeric ID of event logged on auth failure, _e.g._ `4625` for RDP auth errors.</li><li>`source`: optional Source, AKA Provider Name, of events, _e.g._ `sshd-session` for Cygwin OpenSSH sshd. If omitted, events will not be filtered by Source.</li><li>`ipAddressEventDataName`: optional, the `Name` of the `Data` element in the event XML's `EventData` in which to search for the client IP address of the auth request, _e.g._ `IpAddress` for RDP. If omitted, the first `Data` element will be searched instead.</li><li>`ipAddressEventDataIndex`: optional, the 0-indexed offset of the `Data` element in the XML's `EventData` in which to search for the client IP address, _e.g._ `3` to search for IP addresses in the fourth `Data` element in `EventData`. Useful if `EventData` has multiple `Data` children, but none of them have a `Name` attribute to specify in `ipAddressEventDataName`, and the IP address doesn't appear in the first one. This offset is applied after any `Name` attribute filtering, and applies whether or not `ipAddressEventDataName` is specified. If omitted, defaults to `0`.</li><li>`ipAddressPattern`: optional, regular expression pattern string that matches the IP address in the `Data` element specified above. Useful if you want to filter out some events from the log with the desired ID and source but that don't describe an auth failure (_e.g._ sshd's disconnect events). If omitted, searches for all IPv4 addresses in the `Data` element's text content. To set [options like case-insensitivity](https://docs.microsoft.com/en-us/dotnet/standard/base-types/miscellaneous-constructs-in-regular-expressions), put `(?i)` at the start of the pattern. Patterns are not anchored to the entire input string unless you surround them with `^` and `$`. If you specify a pattern, ensure the desired IPv4 capture group in your pattern has the name `ipAddress`, _e.g._ <pre lang="regex">Failed: (?&lt;ipAddress&gt;(?:\d{1,3}\\.){3}\d{1,3})</pre></li><li>`eventPredicate`: optional, XPath 1.0 query fragment to filter events based on arbitrary elements, matched against the `<Event>` element. Useful if not all events with the given `logName`, `eventId`, and `source` should trigger bans, like IIS HTTP 200 responses, _e.g._ `[EventData/Data[@Name='sc-status']=403]`. Most XPath functions are not supported by Windows ETW.</li></ul>See [Handling a new event](#handling-a-new-event) below for a tutorial on creating this object.|
+    |`eventLogSelectors`|`[]`|Required list of event criteria to listen for in Event Log. Each object in the list can have the following properties.<ul><li>`selectorName`: optional friendly name of your choice for this selector. This does not affect matching, and only appears in this program's log file when an event is matched to make it more readable.</li><li>`logName`: required, which log in Event Viewer contains the events, _e.g._ `Application`, `Security`, `OpenSSH/Operational`.</li><li>`eventId`: required, numeric ID of event logged on auth failure, _e.g._ `4625` for RDP auth errors.</li><li>`source`: optional Source, AKA Provider Name, of events, _e.g._ `sshd-session` for Cygwin OpenSSH sshd. If omitted, events will not be filtered by Source.</li><li>`ipAddressEventDataName`: optional, the `Name` of the `Data` element in the event XML's `EventData` in which to search for the client IP address of the auth request, _e.g._ `IpAddress` for RDP. If omitted, the first `Data` element will be searched instead.</li><li>`ipAddressEventDataIndex`: optional, the 0-indexed offset of the `Data` element in the XML's `EventData` in which to search for the client IP address, _e.g._ `3` to search for IP addresses in the fourth `Data` element in `EventData`. Useful if `EventData` has multiple `Data` children, but none of them have a `Name` attribute to specify in `ipAddressEventDataName`, and the IP address doesn't appear in the first one. This offset is applied after any `Name` attribute filtering, and applies whether or not `ipAddressEventDataName` is specified. If omitted, defaults to `0`.</li><li>`ipAddressPattern`: optional, regular expression pattern string that matches the IP address in the `Data` element specified above. Useful if you want to filter out some events from the log with the desired ID and source but that don't describe an auth failure (_e.g._ sshd's disconnect events). If omitted, searches for all IPv4 addresses in the `Data` element's text content. To set [options like case-insensitivity](https://docs.microsoft.com/en-us/dotnet/standard/base-types/miscellaneous-constructs-in-regular-expressions), put `(?i)` at the start of the pattern. Patterns are not anchored to the entire input string unless you surround them with `^` and `$`. If you specify a pattern, ensure the desired IPv4 capture group in your pattern has the name `ipAddress`, _e.g._ <pre lang="regex">Failed: (?&lt;ipAddress&gt;(?:\d{1,3}\\.){3}\d{1,3})</pre></li><li>`eventPredicate`: optional, XPath 1.0 query fragment to filter events based on arbitrary elements, matched against the `<Event>` element. Useful if not all events with the given `logName`, `eventId`, and `source` should trigger bans, like IIS HTTP 200 responses, _e.g._ `[EventData/Data[@Name='sc-status']=403]`. Most XPath functions are not supported by Windows ETW.</li></ul>See [Handling a new event](#handling-a-new-event) below for a tutorial on creating this object.|
 1. After saving the configuration file, restart the Fail2Ban4Win service using `services.msc` (GUI), `Restart-Service Fail2Ban4Win` (PowerShell), or `net stop Fail2Ban4Win & net start Fail2Ban4Win` (Command Prompt) for your changes to take effect. Note that the service will clear existing bans when it starts (unless you changed `unbanAllOnStartup` to `false`).
 
 ### Logging
@@ -125,9 +125,11 @@ In this example, we will go through the process of creating an event for Windows
     ```regex
     ^Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\d{1,3}\.){3}\d{1,3}) port \d{1,5} ssh\d?$
     ```
+1. The `selectorName` is optional and can be any name you want for this selector. It has nothing to do with Event Log event contents and does not affect how events are matched. It only appears in the `Fail2Ban4Win.log` [log file](#logging) when an event is matched to make the logs more readable, especially during debugging.
 1. Here is the resulting event log selector object from all of the above properties.
     ```json
     {
+        "selectorName": "My OpenSSH selector",
         "logName": "OpenSSH/Operational",
         "source": "OpenSSH",
         "eventId": 4,
@@ -135,7 +137,27 @@ In this example, we will go through the process of creating an event for Windows
         "ipAddressPattern": "^Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5} ssh\\d?$"
     }
     ```
-1. You can add this selector object to `configuration.json` by appending it to the `eventLogSelectors` array.
+1. You can add this selector object to `configuration.json` by inserting it into the `eventLogSelectors` array.
+    ```json
+    {
+        "maxAllowedFailures": 9,
+        "eventLogSelectors": [
+            {
+                "selectorName": "Remote Desktop Services",
+                "logName": "Security",
+                "eventId": 4625,
+                "ipAddressEventDataName": "IpAddress"
+            }, {
+                "selectorName": "My OpenSSH selector",
+                "logName": "OpenSSH/Operational",
+                "source": "OpenSSH",
+                "eventId": 4,
+                "ipAddressEventDataName": "payload",
+                "ipAddressPattern": "^Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d{1,5} ssh\\d?$"
+            }
+        ]
+    }
+    ```
 
 ## Running
 Do any of the following.
