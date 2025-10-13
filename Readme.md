@@ -18,6 +18,8 @@ You can customize the duration of the ban, the type of Event Log events to detec
     1. [Handling a new event](#handling-a-new-event)
 1. [Running](#running)
 1. [Monitoring](#monitoring)
+    1. [GUI](#gui)
+    1. [PowerShell](#powershell)
 1. [Acknowledgments](#acknowledgments)
 
 <!-- /MarkdownTOC -->
@@ -28,8 +30,8 @@ You can customize the duration of the ban, the type of Event Log events to detec
 1. Configuration comes from a JSON file in the installation directory.
 1. Fail2Ban4Win listens for Windows Event Log events from various logs and event IDs.
 1. When a matching event is logged by your server software, Fail2Ban4Win extracts the client's IP address from the event data. The IP address is aggregated into a /24 subnet IP range.
-1. Fail2Ban4Win keeps track of how many times each subnet (not each IP address) has triggered auth failures (cumulatively, not per event ID) over the last 24 hours.
-1. When a given subnet has failed to authenticate 10 times in the last 24 hours across all Event Log selectors, a Windows Firewall rule is created to block incoming traffic from that subnet on all ports.
+1. Fail2Ban4Win keeps track of how many times each subnet (not each IP address) has triggered any auth failure events over the last 24 hours.
+1. When a given subnet has failed to authenticate 10 cumulative times in the last 24 hours across all Event Log selectors, a Windows Firewall rule is created to block incoming traffic from that subnet on all ports.
 1. After being banned for 1 day, the firewall rule is deleted and the subnet is allowed to fail 10 more times before being banned a second time.
 1. Each time a subnet is repeatedly banned, the ban duration increases by 1 day, up to a maximum of a 4 day ban, after which each subsequent ban will always be 4 days.
 1. When Fail2Ban4Win restarts, it deletes all firewall rules it created and starts from scratch. This allows it to fail open.
@@ -144,6 +146,8 @@ Do any of the following.
 
 ## Monitoring
 You can see the block rules created by Fail2Ban4Win in Windows Firewall.
+
+### GUI
 1. Start Windows Firewall with Advanced Security (`wf.msc`).
 1. Go to `Inbound Rules`.
 1. To only show rules created by Fail2Ban4Win, select Action › Filter by Group › Filter by Fail2Ban4Win.
@@ -151,6 +155,19 @@ You can see the block rules created by Fail2Ban4Win in Windows Firewall.
 1. To sort by creation time, select View › Add/Remove Columns and Add the Description column, then click the Description column header.
 
 ![Windows Firewall with Advanced Security filtering by Fail2Ban4Win rules](https://i.imgur.com/pW12vKL.png)
+
+### PowerShell
+```ps1
+Get-NetFirewallRule -DisplayGroup Fail2Ban4Win | ft DisplayName, Description
+```
+```text
+DisplayName             Description
+-----------             -----------
+Banned 172.232.9.0/24   Banned 2025-09-22T23:09:58. Will unban 2025-10-13T23:09:58. Offense #3.
+Banned 108.181.178.0/24 Banned 2025-09-22T23:34:07. Will unban 2025-10-13T23:34:07. Offense #3.
+Banned 102.67.139.0/24  Banned 2025-09-23T00:52:14. Will unban 2025-10-14T00:52:14. Offense #3.
+```
+*See [`Get-NetFirewallRule` documentation](https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallrule).*
 
 ## Acknowledgments
 - My parents for free Windows Server hosting with a static IP address for anyone to connect to.

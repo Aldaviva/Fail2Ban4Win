@@ -1,21 +1,19 @@
-﻿#nullable enable
+#nullable enable
 
+using Fail2Ban4Win.Entry;
 using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Windows.Win32;
-using Fail2Ban4Win.Entry;
 using Tests.Logging;
+using Windows.Win32;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Tests.Entry;
 
 public class MainClassTest: IDisposable {
-
-    // private const uint GENERIC_READ = 1u << 31;
 
     private readonly ITestOutputHelper testOutputHelper;
 
@@ -27,7 +25,8 @@ public class MainClassTest: IDisposable {
         File.WriteAllText("configuration.json", JSON, new UTF8Encoding(false, true));
     }
 
-    private const string JSON = """
+    private const string JSON =
+        """
         {
         	"maxAllowedFailures": 9,
         	"failureWindow": "1.00:00:00",
@@ -94,13 +93,8 @@ public class MainClassTest: IDisposable {
         try {
             testOutputHelper.WriteLine("Creating new window station.");
             using CloseWindowStationSafeHandle nonInteractiveWindowStation = PInvoke.CreateWindowStation("hargle", 0, WINSTA_ALL_ACCESS, null);
-            // logWindowStation(newWindowStation);
 
             PInvoke.SetProcessWindowStation(nonInteractiveWindowStation);
-
-            testOutputHelper.WriteLine("\nCurrent process' window handle:");
-            CloseWindowStationSafeHandle currentProcessWindowStation = PInvoke.GetProcessWindowStation_SafeHandle();
-            // logWindowStation(currentProcessWindowStation);
 
             Task main = Task.Run(() => MainClass.Main(Array.Empty<string>()));
 
@@ -114,47 +108,6 @@ public class MainClassTest: IDisposable {
             PInvoke.SetProcessWindowStation(originalWindowStation);
         }
     }
-
-    /*private void logWindowStation(string windowStationName) {
-        using CloseWindowStationSafeHandle windowStation = PInvoke.OpenWindowStation(windowStationName, false, GENERIC_READ);
-
-        logWindowStation(windowStation);
-    }
-
-    private unsafe void logWindowStation(CloseWindowStationSafeHandle windowStation) {
-        uint lengthNeeded = 0;
-
-        IntPtr nameBuffer = Marshal.AllocHGlobal(1024);
-        PInvoke.GetUserObjectInformation(windowStation, USER_OBJECT_INFORMATION_INDEX.UOI_NAME, nameBuffer.ToPointer(), 1024u, &lengthNeeded);
-        string windowStationName = Marshal.PtrToStringAuto(nameBuffer, (int) lengthNeeded);
-        Marshal.FreeHGlobal(nameBuffer);
-        windowStationName = windowStationName.Substring(0, Math.Max(0, windowStationName.IndexOf('\0')));
-        testOutputHelper.WriteLine("Window station {0}:", windowStationName);
-
-        USEROBJECTFLAGS userobjectflags = new();
-        PInvoke.GetUserObjectInformation(windowStation, USER_OBJECT_INFORMATION_INDEX.UOI_FLAGS, &userobjectflags, (uint) Marshal.SizeOf<USEROBJECTFLAGS>(), &lengthNeeded);
-
-        testOutputHelper.WriteLine("  WSF_VISIBLE: {0}", (userobjectflags.dwFlags & 1) != 0);
-
-        bool io = false;
-        PInvoke.GetUserObjectInformation(windowStation, USER_OBJECT_INFORMATION_INDEX.UOI_IO, &io, 1, &lengthNeeded);
-
-        testOutputHelper.WriteLine("  UOI_IO: {0}", io);
-
-        testOutputHelper.WriteLine("  Desktops:");
-
-        PInvoke.EnumDesktops(windowStation, (desktopName, _) => {
-            testOutputHelper.WriteLine("    Name: {0}", desktopName);
-            using CloseDesktopSafeHandle desktop = PInvoke.OpenDesktop(desktopName.ToString(), 0, false, GENERIC_READ);
-            PInvoke.EnumDesktopWindows(desktop, (hwnd, _) => {
-                SystemWindow  window  = new(hwnd.Value);
-                using Process process = window.Process;
-                testOutputHelper.WriteLine("      Window: title={0}, class={3} ({1}:{2})", window.Title, process.ProcessName, process.Id, window.ClassName);
-                return true;
-            }, new LPARAM());
-            return true;
-        }, new LPARAM());
-    }*/
 
     public void Dispose() {
         File.Delete("configuration.json");
