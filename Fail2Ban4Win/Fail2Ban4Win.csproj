@@ -116,7 +116,7 @@
       <Version>9.0.9</Version>
     </PackageReference>
     <PackageReference Include="NLog">
-      <Version>5.5.1</Version>
+      <Version>6.0.7</Version>
     </PackageReference>
     <PackageReference Include="Unfucked">
       <Version>0.0.1-beta.13</Version>
