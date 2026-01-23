@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Ben Hutchison")]
 [assembly: AssemblyProduct("Fail2Ban4Win")]
-[assembly: AssemblyCopyright("© 2025 Ben Hutchison")]
+[assembly: AssemblyCopyright("© 2026 Ben Hutchison")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
