@@ -10,9 +10,9 @@
       },
       "IPNetwork2": {
         "type": "Direct",
-        "requested": "[3.4.851, )",
-        "resolved": "3.4.851",
-        "contentHash": "YoY4tPBQHF+/7uIFf4IYmk7Oc8C3qq37oR3Mk2aiMav+6temsjjBmMIFHI9Ep/8MAKUS0BxhwkFAMxa9CQ1HOQ==",
+        "requested": "[3.4.853, )",
+        "resolved": "3.4.853",
+        "contentHash": "A5o5x3KauQupa8CS3tr50QCD4cdF0JI+km3ZsxlGShU8rd7EZzQgylmkv/LoN6V7+9aBRB/rc+lIf1W+zwVqZw==",
         "dependencies": {
           "System.Memory": "4.6.3"
         }
