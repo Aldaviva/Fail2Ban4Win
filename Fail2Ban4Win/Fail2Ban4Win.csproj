@@ -104,7 +104,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="IPNetwork2">
-      <Version>3.4.851</Version>
+      <Version>3.4.853</Version>
     </PackageReference>
     <PackageReference Include="LightInject">
       <Version>7.0.1</Version>
