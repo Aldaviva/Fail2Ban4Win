@@ -1,10 +1,12 @@
-﻿#nullable enable
+#nullable enable
 
 using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
 using Fail2Ban4Win.Injection;
+using Fail2Ban4Win.Plugins;
 using NLog;
+using Plugins;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -33,19 +35,21 @@ public class BanManagerImpl: BanManager {
 
     private static readonly IPNetwork2 LOOPBACK = IPNetwork2.Parse(IPAddress.Loopback, IPNetwork2.ToNetmask(8, AddressFamily.InterNetwork));
 
-    private readonly EventLogListener eventLogListener;
-    private readonly Configuration    configuration;
-    private readonly FirewallFacade   firewall;
-    private readonly IPAddress        subnetMask;
+    private readonly EventLogListener                    eventLogListener;
+    private readonly Configuration                       configuration;
+    private readonly FirewallFacade                      firewall;
+    private readonly IPluginManager<IFail2Ban4WinPlugin> pluginManager;
+    private readonly IPAddress                           subnetMask;
 
     private readonly ConcurrentDictionary<IPNetwork2, SubnetFailureHistory> failures                = new();
     private readonly CancellationTokenSource                                cancellationTokenSource = new();
     private readonly ManualResetEventSlim                                   initialRuleDeletionDone = new(false);
 
-    public BanManagerImpl(EventLogListener eventLogListener, Configuration configuration, FirewallFacade firewall) {
+    public BanManagerImpl(EventLogListener eventLogListener, Configuration configuration, FirewallFacade firewall, IPluginManager<IFail2Ban4WinPlugin> pluginManager) {
         this.eventLogListener = eventLogListener;
         this.configuration    = configuration;
         this.firewall         = firewall;
+        this.pluginManager    = pluginManager;
 
         subnetMask = IPNetwork2.ToNetmask((byte) (32 - (this.configuration.banSubnetBits ?? 0)), AddressFamily.InterNetwork);
 
@@ -75,15 +79,22 @@ public class BanManagerImpl: BanManager {
                     DateTime now             = DateTime.Now;
                     int      scheduledUnbans = 0;
                     foreach (FirewallWASRule oldRule in oldRules) {
-                        if (parseRuleName(oldRule.Name) is { } subnet && parseRuleDescription(oldRule.Description) is var (_, unbanTime, _)) {
-                            TimeSpan unbanDuration = unbanTime - now;
-                            if (unbanDuration > TimeSpan.Zero) {
-                                scheduleUnban(subnet, unbanDuration);
+                        if (parseBan(oldRule) is {} ban) {
+                            TimeSpan remainingBanDuration = ban.End - now;
+                            if (remainingBanDuration > TimeSpan.Zero) {
+                                scheduleUnban(ban.Subnet, remainingBanDuration);
                                 scheduledUnbans++;
-                                LOGGER.Debug("Resumed timer after Fail2Ban4Win restarted to unban {subnet} at the original time of {time:O} (in {duration:g})", subnet, unbanTime, unbanDuration);
-                            } else if (!configuration.isDryRun) {
-                                LOGGER.Info("Ban already expired on subnet {subnet} while Fail2Ban4Win wasn't running, removing firewall rule {name} now", subnet, oldRule.Name);
-                                firewall.Rules.Remove(oldRule);
+                                LOGGER.Debug("Resumed timer after Fail2Ban4Win restarted to unban {subnet} at the original time of {time:O} (in {duration:g})", ban.Subnet, ban.End,
+                                    remainingBanDuration);
+                            } else {
+                                if (!configuration.isDryRun) {
+                                    LOGGER.Info("Ban already expired on subnet {subnet} while Fail2Ban4Win wasn't running, removing firewall rule {name} now", ban.Start, oldRule.Name);
+                                    firewall.Rules.Remove(oldRule);
+                                }
+
+                                foreach (IFail2Ban4WinPlugin plugin in pluginManager.Plugins) {
+                                    plugin.OnBanLifted(ban);
+                                }
                             }
                         } else if (!configuration.isDryRun) {
                             LOGGER.Warn("Failed to parse name or description of existing rule while repopulating timers after restart, deleting malformed rule. Name: {name}, description: \"{desc}\"",
@@ -102,14 +113,21 @@ public class BanManagerImpl: BanManager {
     }
 
     private void onFailure(object sender, IPAddress ipAddress) {
-        IPNetwork2 subnet = IPNetwork2.Parse(ipAddress, subnetMask);
-
+        IPNetwork2           subnet            = IPNetwork2.Parse(ipAddress, subnetMask);
         SubnetFailureHistory failuresForSubnet = failures.GetOrAdd(subnet, _ => new ArrayListSubnetFailureHistory(configuration.maxAllowedFailures));
+        BanParams?           ban               = null;
+
         lock (failuresForSubnet) {
             failuresForSubnet.add(DateTimeOffset.Now);
 
             if (shouldBan(subnet, failuresForSubnet)) {
-                ban(subnet, failuresForSubnet);
+                ban = this.ban(subnet, failuresForSubnet);
+            }
+        }
+
+        if (ban is not null) {
+            foreach (IFail2Ban4WinPlugin plugin in pluginManager.Plugins) {
+                plugin.OnSubnetBanned(ban.Value);
             }
         }
     }
@@ -150,16 +168,16 @@ public class BanManagerImpl: BanManager {
     }
 
     // this runs inside a lock on the SubnetFailureHistory
-    private void ban(IPNetwork2 subnet, SubnetFailureHistory clientFailureHistory) {
+    private BanParams ban(IPNetwork2 subnet, SubnetFailureHistory clientFailureHistory) {
         clientFailureHistory.banCount++;
 
         initialRuleDeletionDone.Wait(cancellationTokenSource.Token);
 
-        DateTime now           = DateTime.Now;
-        TimeSpan unbanDuration = getUnbanDuration(clientFailureHistory.banCount);
-
+        DateTime  now           = DateTime.Now;
+        TimeSpan  unbanDuration = getUnbanDuration(clientFailureHistory.banCount);
+        BanParams ban           = new(subnet, now, unbanDuration, clientFailureHistory.banCount);
         FirewallWASRuleWin7 rule = new(generateRuleName(subnet), FirewallAction.Block, FirewallDirection.Inbound, ALL_PROFILES) {
-            Description     = generateRuleDescription(now, unbanDuration, clientFailureHistory.banCount),
+            Description     = generateRuleDescription(ban),
             Grouping        = GROUP_NAME,
             RemoteAddresses = [new NetworkAddress(subnet.Network, subnet.Netmask)]
         };
@@ -177,6 +195,8 @@ public class BanManagerImpl: BanManager {
             LOGGER.Info("Would have added Windows Firewall rule to block inbound traffic from {subnet}, but dry run mode is enabled, so skipping adding rule. " +
                 "To actually add firewall rules, set {config} to false in {file} and restart Fail2Ban4Win.", subnet, nameof(Configuration.isDryRun), ConfigurationModule.FILENAME);
         }
+
+        return ban;
     }
 
     private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => Tasks.Delay(unbanDuration, cancellationTokenSource.Token)
@@ -200,10 +220,21 @@ public class BanManagerImpl: BanManager {
 
     private void unban(IPNetwork2 subnet) {
         IEnumerable<FirewallWASRule> rulesToRemove = firewall.Rules.Where(isBanRule(subnet)).ToList(); //eagerly evaluate Where clause to prevent concurrent modification below
+        IList<BanParams>             unbanned      = [];
         foreach (FirewallWASRule rule in rulesToRemove) {
             LOGGER.Info("Ban has expired for subnet {subnet}, removing firewall rule {name}", subnet, rule.Name);
             if (!configuration.isDryRun) {
                 firewall.Rules.Remove(rule);
+            }
+
+            if (parseBan(rule) is {} ban) {
+                unbanned.Add(ban);
+            }
+        }
+
+        foreach (BanParams ban in unbanned) {
+            foreach (IFail2Ban4WinPlugin plugin in pluginManager.Plugins) {
+                plugin.OnBanLifted(ban);
             }
         }
     }
@@ -213,6 +244,10 @@ public class BanManagerImpl: BanManager {
         return rule => rule.Grouping == GROUP_NAME && (ruleName is null || ruleName == rule.Name);
     }
 
+    private static BanParams? parseBan(FirewallWASRule firewallRule) =>
+        parseRuleName(firewallRule.Name) is {} subnet && parseRuleDescription(firewallRule.Description) is var (bannedTime, unbanTime, offenseCount)
+            ? new BanParams(subnet, bannedTime, unbanTime - bannedTime, offenseCount) : null;
+
     private static string generateRuleName(IPNetwork2 subnet) => $"Banned {subnet}";
 
     private static readonly Regex BAN_NAME_PATTERN = new(@"^Banned (?<subnet>[\d\./]+?)$");
@@ -220,7 +255,7 @@ public class BanManagerImpl: BanManager {
     private static IPNetwork2? parseRuleName(string name) =>
         BAN_NAME_PATTERN.Match(name) is { Success: true } match && IPNetwork2.TryParse(match.Groups["subnet"].Value, out IPNetwork2 subnet) ? subnet : null;
 
-    private static string generateRuleDescription(DateTime now, TimeSpan unbanDuration, int offenseCount) => $"Banned {now:s}. Will unban {now + unbanDuration:s}. Offense #{offenseCount:N0}.";
+    private static string generateRuleDescription(BanParams ban) => $"Banned {ban.Start:s}. Will unban {ban.Start + ban.Duration:s}. Offense #{ban.OffenseCount:N0}.";
 
     private static readonly Regex BAN_DESCRIPTION_PATTERN = new(@"^Banned (?<banned>[\dT:-]+?)\. Will unban (?<unban>[\dT:-]+?)\. Offense #(?<offense>[\d, .']+?)\.$");
 
