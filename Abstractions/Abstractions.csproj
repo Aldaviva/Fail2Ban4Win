@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AssemblyName>Fail2Ban4Win.$(MSBuildProjectName)</AssemblyName>
+        <Version>0.0.0</Version>
+        <Authors>Ben Hutchison</Authors>
+        <Copyright>© 2026 $(Authors)</Copyright>
+        <Company>$(Authors)</Company>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <PackageProjectUrl>https://github.com/Aldaviva/Fail2Ban4Win</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Aldaviva/Fail2Ban4Win.git</RepositoryUrl>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <Description>Interfaces and other abstractions used to write plugins that extend the functionality of Fail2Ban4Win</Description>
+        <PackageTags>Fail2Ban4Win plugin abstraction addin extension</PackageTags>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IncludeSource>true</IncludeSource>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <RootNamespace>Fail2Ban4Win</RootNamespace>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="IPNetwork2" Version="3.4.853" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.103" PrivateAssets="All" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true' or '$(Configuration)' != 'Debug'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+</Project>

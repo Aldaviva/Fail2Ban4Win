@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.3.32929.385
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fail2Ban4Win", "Fail2Ban4Win\Fail2Ban4Win.csproj", "{F87074CC-C205-403F-8113-5F41716BE1CB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abstractions", "Abstractions\Abstractions.csproj", "{7F8E72BC-0DC1-4326-B9DF-4A3391B0FD38}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A7D0B42-33B3-47F6-94F6-FAAA585A3B13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F8E72BC-0DC1-4326-B9DF-4A3391B0FD38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F8E72BC-0DC1-4326-B9DF-4A3391B0FD38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F8E72BC-0DC1-4326-B9DF-4A3391B0FD38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F8E72BC-0DC1-4326-B9DF-4A3391B0FD38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
