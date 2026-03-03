@@ -66,9 +66,9 @@
       },
       "Plugins": {
         "type": "Direct",
-        "requested": "[0.0.0-beta.3, )",
-        "resolved": "0.0.0-beta.3",
-        "contentHash": "Nt4dKwvs1oz1CU3DtfEMdoORhPxvVsm4iYRchKYfWqdpXRgb6kx2D/sk/IDBko+UhnFwTcdtGk30oLQpA2EZyA=="
+        "requested": "[0.0.0-beta.4, )",
+        "resolved": "0.0.0-beta.4",
+        "contentHash": "XnRjoxTHqi0Q7KYU42FZDB+i5XYLURfkYZZK6cgKR7MLzp75usXV9aqLVO2jBvir68DOg2GV2iuLscHmbwreKA=="
       },
       "Unfucked": {
         "type": "Direct",
@@ -238,6 +238,10 @@
         "resolved": "4.6.1",
         "contentHash": "+RJT4qaekpZ7DDLhf+LTjq+E48jieKiY9ulJ+BoxKmZblIJfIJT8Ufcaa/clQqnYvWs8jugfGSMu8ylS0caG0w=="
       }
-    }
+    },
+    ".NETFramework,Version=v4.7.2/win": {},
+    ".NETFramework,Version=v4.7.2/win-arm64": {},
+    ".NETFramework,Version=v4.7.2/win-x64": {},
+    ".NETFramework,Version=v4.7.2/win-x86": {}
   }
 }

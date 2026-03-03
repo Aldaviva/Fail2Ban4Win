@@ -121,7 +121,7 @@
     <PackageReference Include="NLog">
       <Version>5.5.1</Version>
     </PackageReference>
-    <PackageReference Include="Plugins" Version="0.0.0-beta.3" />
+    <PackageReference Include="Plugins" Version="0.0.0-beta.4" />
     <PackageReference Include="Unfucked">
       <Version>0.0.1-beta.31</Version>
     </PackageReference>

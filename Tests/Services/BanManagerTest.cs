@@ -1,9 +1,12 @@
 #nullable enable
 
 using Fail2Ban4Win.Config;
+using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
+using Fail2Ban4Win.Plugins;
 using Fail2Ban4Win.Services;
 using FakeItEasy;
+using Plugins;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,9 +28,10 @@ public class BanManagerTest: IDisposable {
 
     private const int MAX_ALLOWED_FAILURES = 2;
 
-    private readonly BanManagerImpl    banManager;
-    private readonly EventLogListener  eventLogListener = A.Fake<EventLogListener>();
-    private readonly ITestOutputHelper testOutput;
+    private readonly BanManagerImpl                      banManager;
+    private readonly EventLogListener                    eventLogListener = A.Fake<EventLogListener>();
+    private readonly IPluginManager<IFail2Ban4WinPlugin> pluginManager    = A.Fake<IPluginManager<IFail2Ban4WinPlugin>>();
+    private readonly ITestOutputHelper                   testOutput;
 
     private readonly Configuration configuration = new() {
         isDryRun                      = false,
@@ -48,7 +52,7 @@ public class BanManagerTest: IDisposable {
         XunitTestOutputTarget.start(testOutput);
 
         A.CallTo(() => firewallFacade.Rules).Returns(firewallRules);
-        banManager = new BanManagerImpl(eventLogListener, configuration, firewallFacade);
+        banManager = new BanManagerImpl(eventLogListener, configuration, firewallFacade, pluginManager);
     }
 
     [Fact]
@@ -152,7 +156,7 @@ public class BanManagerTest: IDisposable {
 
         configuration.isDryRun = true;
 
-        BanManagerImpl manager = new(eventLogListener, configuration, firewallFacade);
+        BanManagerImpl manager = new(eventLogListener, configuration, firewallFacade, pluginManager);
 
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
             eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
@@ -175,7 +179,7 @@ public class BanManagerTest: IDisposable {
 
         Assert.NotEmpty(firewallRules);
 
-        BanManagerImpl manager = new(eventLogListener, configuration, firewallFacade);
+        BanManagerImpl manager = new(eventLogListener, configuration, firewallFacade, pluginManager);
 
         Assert.NotEmpty(firewallRules);
 
@@ -278,6 +282,50 @@ public class BanManagerTest: IDisposable {
         }
 
         Assert.NotEmpty(firewallRules);
+    }
+
+    [Fact]
+    public void pluginBanCallback() {
+        configuration.banPeriod = TimeSpan.FromHours(1);
+
+        IFail2Ban4WinPlugin plugin = A.Fake<IFail2Ban4WinPlugin>();
+        Captured<BanParams> bans   = A.Captured<BanParams>();
+        A.CallTo(() => pluginManager.Plugins).Returns([plugin]);
+        A.CallTo(() => plugin.OnSubnetBanned(bans._)).DoesNothing();
+
+        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+        }
+
+        Assert.NotEmpty(firewallRules);
+        BanParams actualBan = bans.GetLastValue();
+        Assert.Equal(IPNetwork2.Parse("192.0.2.0/24"), actualBan.Subnet);
+        Assert.Equal(TimeSpan.FromHours(1), actualBan.Duration);
+        Assert.Equal(1, actualBan.OffenseCount);
+        Assert.Equal(actualBan.Start, DateTime.Now, TimeSpan.FromSeconds(2));
+        Assert.Equal(actualBan.End, DateTime.Now + TimeSpan.FromHours(1), TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public void pluginUnbanCallback() {
+        IFail2Ban4WinPlugin plugin = A.Fake<IFail2Ban4WinPlugin>();
+        Captured<BanParams> bans   = A.Captured<BanParams>();
+        A.CallTo(() => pluginManager.Plugins).Returns([plugin]);
+        using ManualResetEventSlim callbackFired = new();
+        A.CallTo(() => plugin.OnBanLifted(bans._)).Invokes(() => callbackFired.Set());
+
+        for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
+            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+        }
+
+        callbackFired.Wait(TimeSpan.FromSeconds(10));
+
+        BanParams actualBan = bans.GetLastValue();
+        Assert.Equal(IPNetwork2.Parse("192.0.2.0/24"), actualBan.Subnet);
+        Assert.InRange(actualBan.Duration, TimeSpan.Zero, TimeSpan.FromMilliseconds(200));
+        Assert.Equal(1, actualBan.OffenseCount);
+        Assert.Equal(actualBan.Start, DateTime.Now, TimeSpan.FromSeconds(2));
+        Assert.Equal(actualBan.End, DateTime.Now + TimeSpan.FromMilliseconds(200), TimeSpan.FromSeconds(2));
     }
 
     private class FakeFirewallRulesCollection: List<FirewallWASRule>, IFirewallWASRulesCollection<FirewallWASRule> {
