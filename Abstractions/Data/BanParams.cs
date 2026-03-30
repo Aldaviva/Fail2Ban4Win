@@ -9,7 +9,7 @@ namespace Fail2Ban4Win.Data;
 /// <param name="start">When the ban went into effect.</param>
 /// <param name="duration">How long the ban lasts.</param>
 /// <param name="offenseCount">How many times this subnet has been banned recently, including this one (starts at 1).</param>
-public readonly struct BanParams(IPNetwork2 subnet, DateTime start, TimeSpan duration, int offenseCount) {
+public readonly struct BanParams(IPNetwork2 subnet, DateTimeOffset start, TimeSpan duration, int offenseCount) {
 
     /// <summary>
     /// The IP range whose traffic is rejected.
@@ -19,7 +19,7 @@ public readonly struct BanParams(IPNetwork2 subnet, DateTime start, TimeSpan dur
     /// <summary>
     /// When the ban went into effect.
     /// </summary>
-    public DateTime Start { get; } = start;
+    public DateTimeOffset Start { get; } = start;
 
     /// <summary>
     /// How long the ban lasts.
@@ -34,7 +34,7 @@ public readonly struct BanParams(IPNetwork2 subnet, DateTime start, TimeSpan dur
     /// <summary>
     /// When the ban ends and the firewall rule is removed.
     /// </summary>
-    public DateTime End => Start + Duration;
+    public DateTimeOffset End => Start + Duration;
 
     /// <inheritdoc cref="object.Equals(object)" />
     public bool Equals(BanParams other) => Subnet.Equals(other.Subnet) && Start.Equals(other.Start) && Duration.Equals(other.Duration) && OffenseCount == other.OffenseCount;
