@@ -20,6 +20,7 @@ You can customize the duration of the ban, the type of Event Log events to detec
 1. [Monitoring](#monitoring)
     1. [GUI](#gui)
     1. [PowerShell](#powershell)
+1. [Extensibility](#extensibility)
 1. [Uninstallation](#uninstallation)
 1. [Acknowledgments](#acknowledgments)
 
@@ -191,6 +192,9 @@ Banned 108.181.178.0/24 Banned 2025-09-22T23:34:07. Will unban 2025-10-13T23:34:
 Banned 102.67.139.0/24  Banned 2025-09-23T00:52:14. Will unban 2025-10-14T00:52:14. Offense #3.
 ```
 *See [`Get-NetFirewallRule` documentation](https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallrule).*
+
+## Extensibility
+If you want this program to execute custom logic when an IP address fails to authenticate or a subnet is banned or unbanned, such as sending you a notification, you can [write a plugin](https://github.com/Aldaviva/Fail2Ban4Win/wiki/Plugin-Authoring). These plugins take the form of .NET DLLs in the `plugins` subdirectory of the Fail2Ban4Win installation directory.
 
 ## Uninstallation
 
