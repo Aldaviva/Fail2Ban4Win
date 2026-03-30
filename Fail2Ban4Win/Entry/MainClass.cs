@@ -1,6 +1,5 @@
-﻿#nullable enable
+#nullable enable
 
-using System;
 using System.ServiceProcess;
 using System.Threading;
 
@@ -8,35 +7,33 @@ namespace Fail2Ban4Win.Entry;
 
 public static class MainClass {
 
-    private static readonly ManualResetEvent UNBLOCK_MAIN_THREAD = new(false);
+    private static readonly ManualResetEventSlim UNBLOCK_MAIN_THREAD = new(false);
 
-    private static WindowsService service = null!;
+    private static WindowsService? service;
 
     public static void Main(string[] args) {
         service = new WindowsService();
         if (isBackgroundService) {
             ServiceBase.Run(service);
         } else {
-            Console.CancelKeyPress += onCtrlC;
+            Console.CancelKeyPress += (_, eventArgs) => {
+                eventArgs.Cancel = true;
+                stop();
+            };
 
             service.startManually(args);
 
-            UNBLOCK_MAIN_THREAD.WaitOne(); //block while service runs, then exit once user hits Ctrl+C
+            UNBLOCK_MAIN_THREAD.Wait(); //block while service runs, then exit once user hits Ctrl+C
 
             service.Dispose();
         }
     }
 
-    internal static void onCtrlC(object? sender, ConsoleCancelEventArgs eventArgs) {
-        eventArgs.Cancel = true;
-        stop();
-    }
-
     public static void stop() {
         if (isBackgroundService) {
-            service.Stop();
+            service?.Stop();
         } else {
-            service.stopManually();
+            service?.stopManually();
             UNBLOCK_MAIN_THREAD.Set();
         }
     }

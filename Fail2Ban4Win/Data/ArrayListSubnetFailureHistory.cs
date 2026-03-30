@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace Fail2Ban4Win.Data;
 
-namespace Fail2Ban4Win.Data;
-
-public class ArrayListSubnetFailureHistory: SubnetFailureHistory {
+public sealed class ArrayListSubnetFailureHistory: SubnetFailureHistory {
 
     private readonly List<DateTimeOffset> failureTimes;
 

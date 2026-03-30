@@ -1,9 +1,10 @@
-﻿
+
 using System.Diagnostics.CodeAnalysis;
 
 namespace Fail2Ban4Win.Entry
 {
-    partial class WindowsService
+
+    sealed partial class WindowsService
     {
         /// <summary> 
         /// Required designer variable.

@@ -1,5 +1,6 @@
-﻿#nullable enable
+#nullable enable
 
+using Fail2Ban4Win.Logging;
 using Fail2Ban4Win.Services;
 using LightInject;
 using System.Reflection;
@@ -7,13 +8,14 @@ using System.ServiceProcess;
 
 namespace Fail2Ban4Win.Entry;
 
-public partial class WindowsService: ServiceBase {
+public sealed partial class WindowsService: ServiceBase {
 
     private ServiceContainer? context;
     private Scope?            scope;
 
     public WindowsService() {
         InitializeComponent();
+        UnfuckedValueFormatter.register();
     }
 
     protected override void OnStart(string[] args) {
@@ -29,12 +31,8 @@ public partial class WindowsService: ServiceBase {
         context?.Dispose();
     }
 
-    public void stopManually() {
-        OnStop();
-    }
+    public void stopManually() => OnStop();
 
-    public void startManually(string[] args) {
-        OnStart(args);
-    }
+    public void startManually(string[] args) => OnStart(args);
 
 }

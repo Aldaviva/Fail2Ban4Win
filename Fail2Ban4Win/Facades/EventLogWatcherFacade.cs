@@ -1,9 +1,6 @@
-﻿#nullable enable
+#nullable enable
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
-using System.Linq;
 
 // ReSharper disable InconsistentNaming
 
@@ -22,7 +19,7 @@ public interface EventLogWatcherFacade: IDisposable {
 
 }
 
-public class EventLogWatcherFacadeImpl: EventLogWatcherFacade {
+public sealed class EventLogWatcherFacadeImpl: EventLogWatcherFacade {
 
     private readonly EventLogWatcher watcher;
 
@@ -42,13 +39,13 @@ public class EventLogWatcherFacadeImpl: EventLogWatcherFacade {
     }
 
     /// <inheritdoc cref="EventLogWatcher(EventLogQuery)"/>
-    public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery): this(new EventLogWatcher(eventQuery)) { }
+    public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery): this(new EventLogWatcher(eventQuery)) {}
 
     /// <inheritdoc cref="EventLogWatcher(EventLogQuery, EventBookmark)"/>
-    public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery, EventBookmark bookmark): this(new EventLogWatcher(eventQuery, bookmark)) { }
+    public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery, EventBookmark bookmark): this(new EventLogWatcher(eventQuery, bookmark)) {}
 
     /// <inheritdoc cref="EventLogWatcher(EventLogQuery, EventBookmark, bool)"/>
-    public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery, EventBookmark bookmark, bool readExistingEvents): this(new EventLogWatcher(eventQuery, bookmark, readExistingEvents)) { }
+    public EventLogWatcherFacadeImpl(EventLogQueryFacade eventQuery, EventBookmark bookmark, bool readExistingEvents): this(new EventLogWatcher(eventQuery, bookmark, readExistingEvents)) {}
 
     private void WatcherOnEventRecordWritten(object sender, EventRecordWrittenEventArgs e) {
         EventRecordWritten?.Invoke(sender, new EventRecordWrittenEventArgsFacade(e));
@@ -62,7 +59,7 @@ public class EventLogWatcherFacadeImpl: EventLogWatcherFacade {
 }
 
 /// <inheritdoc cref="EventLogQuery"/>
-public class EventLogQueryFacade: EventLogQuery {
+public sealed class EventLogQueryFacade: EventLogQuery {
 
     public string path { get; }
     public PathType pathType { get; }
@@ -83,7 +80,7 @@ public class EventLogQueryFacade: EventLogQuery {
 
 }
 
-public class EventRecordWrittenEventArgsFacade {
+public sealed class EventRecordWrittenEventArgsFacade {
 
     /// <summary>
     /// The EventRecord being notified.
@@ -126,6 +123,9 @@ public interface EventLogRecordFacade: IDisposable {
     /// <inheritdoc cref="EventLogRecord.ProviderName"/>
     string ProviderName { get; }
 
+    /// <inheritdoc cref="EventLogRecord.TimeCreated" />
+    DateTime? TimeCreated { get; }
+
     /// <inheritdoc cref="EventLogRecord.Properties"/>
     IList<EventPropertyFacade> Properties { get; }
 
@@ -134,7 +134,7 @@ public interface EventLogRecordFacade: IDisposable {
 
 }
 
-public class EventLogRecordFacadeImpl: EventLogRecordFacade {
+public sealed class EventLogRecordFacadeImpl: EventLogRecordFacade {
 
     private readonly EventLogRecord record;
 
@@ -142,25 +142,22 @@ public class EventLogRecordFacadeImpl: EventLogRecordFacade {
     public int Id => record.Id;
     public long? RecordId => record.RecordId;
     public string ProviderName => record.ProviderName;
+    public DateTime? TimeCreated => record.TimeCreated;
 
     public EventLogRecordFacadeImpl(EventLogRecord record) {
         this.record = record;
     }
 
-    public IList<object> GetPropertyValues(EventLogPropertySelectorFacade propertySelector) {
-        return record.GetPropertyValues(propertySelector);
-    }
+    public IList<object> GetPropertyValues(EventLogPropertySelectorFacade propertySelector) => record.GetPropertyValues(propertySelector);
 
     public IList<EventPropertyFacade> Properties => record.Properties.Select(property => new EventPropertyFacade(property)).ToList();
 
-    public void Dispose() {
-        record.Dispose();
-    }
+    public void Dispose() => record.Dispose();
 
 }
 
 /// <inheritdoc cref="EventProperty"/>
-public class EventPropertyFacade {
+public sealed class EventPropertyFacade {
 
     /// <inheritdoc cref="EventProperty.Value"/>
     public object Value { get; }
@@ -169,12 +166,12 @@ public class EventPropertyFacade {
         Value = value;
     }
 
-    public EventPropertyFacade(EventProperty property): this(property.Value) { }
+    public EventPropertyFacade(EventProperty property): this(property.Value) {}
 
 }
 
 /// <inheritdoc cref="EventLogPropertySelector"/>
-public class EventLogPropertySelectorFacade: EventLogPropertySelector {
+public sealed class EventLogPropertySelectorFacade: EventLogPropertySelector {
 
     public IEnumerable<string> propertyQueries { get; }
 
@@ -184,6 +181,6 @@ public class EventLogPropertySelectorFacade: EventLogPropertySelector {
     }
 
     /// <inheritdoc cref="EventLogPropertySelector(IEnumerable&lt;string&gt;)"/>
-    public EventLogPropertySelectorFacade(IEnumerable<string> propertyQueries): this((ICollection<string>) propertyQueries) { }
+    public EventLogPropertySelectorFacade(IEnumerable<string> propertyQueries): this((ICollection<string>) propertyQueries) {}
 
 }

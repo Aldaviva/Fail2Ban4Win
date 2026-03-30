@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 using WindowsFirewallHelper;
 using WindowsFirewallHelper.Collections;
@@ -6,7 +6,7 @@ using WindowsFirewallHelper.FirewallRules;
 
 // ReSharper disable InconsistentNaming
 
-namespace Fail2Ban4Win.Facades; 
+namespace Fail2Ban4Win.Facades;
 
 public interface FirewallFacade {
 
@@ -14,11 +14,11 @@ public interface FirewallFacade {
 
 }
 
-internal class FirewallWASFacade: FirewallFacade {
+internal sealed class FirewallWASFacade: FirewallFacade {
 
     private readonly FirewallWAS instance;
 
-    public FirewallWASFacade(): this(FirewallWAS.Instance) { }
+    public FirewallWASFacade(): this(FirewallWAS.Instance) {}
 
     public FirewallWASFacade(FirewallWAS instance) {
         this.instance = instance;

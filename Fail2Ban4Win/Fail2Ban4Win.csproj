@@ -54,13 +54,14 @@
     <Compile Include="Config\Configuration.cs" />
     <Compile Include="Config\IPNetworkDeserializer.cs" />
     <Compile Include="Config\RegexDeserializer.cs" />
-    <Compile Include="Data\EnumerableExtensions.cs" />
     <Compile Include="Facades\EventLogWatcherFacade.cs" />
     <Compile Include="Facades\FirewallFacade.cs" />
+    <Compile Include="GlobalUsings.cs" />
     <Compile Include="Injection\ConfigurationModule.cs" />
     <Compile Include="Injection\FacadeModules.cs" />
     <Compile Include="Injection\ServiceModules.cs" />
     <Compile Include="Data\ArrayListSubnetFailureHistory.cs" />
+    <Compile Include="Logging\UnfuckedValueFormatter.cs" />
     <Compile Include="Services\BanManager.cs" />
     <Compile Include="Services\EventLogListener.cs" />
     <Compile Include="Entry\WindowsService.cs">
@@ -77,15 +78,13 @@
     <None Include="App.config" />
     <None Include="app.manifest" />
     <None Include="configuration.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="ILRepack.targets" />
     <None Include="Install service.ps1">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Logging\NLog.config" CopyToOutputDirectory="PreserveNewest" TargetPath=".\%(Filename)%(Extension)" />
     <None Include="packages.lock.json" />
   </ItemGroup>
   <ItemGroup>
@@ -95,13 +94,15 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="pifmgr_37.ico" />
+    <None Include="..\Readme.md" />
+    <None Include="..\.github\**" Link=".github\%(RecursiveDir)\%(FileName)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fail2Ban4Win.Abstractions">
-      <Version>0.0.1</Version>
+      <Version>0.0.3</Version>
     </PackageReference>
     <PackageReference Include="ILRepack.Lib.MSBuild.Task">
-      <Version>2.0.44.1</Version>
+      <Version>2.0.44.2</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -122,11 +123,12 @@
     </PackageReference>
     <PackageReference Include="Plugins" Version="0.0.0-beta.5" />
     <PackageReference Include="Unfucked">
-      <Version>0.0.1-beta.32</Version>
+      <Version>0.0.1-beta.35</Version>
     </PackageReference>
     <PackageReference Include="WindowsFirewallHelper">
       <Version>2.2.0.86</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -4,18 +4,18 @@
     ".NETFramework,Version=v4.7.2": {
       "Fail2Ban4Win.Abstractions": {
         "type": "Direct",
-        "requested": "[0.0.1, )",
-        "resolved": "0.0.1",
-        "contentHash": "EgxZil3VjlD0qvlmShW3/mJazKARfxz13Jkqj9hEe3+tktZCdirVe88SCmYBt276r6MW7A3gkVnhkjuE0K4nXw==",
+        "requested": "[0.0.3, )",
+        "resolved": "0.0.3",
+        "contentHash": "9la5mN9abjPDoVecI4suqHaNZMssvfyzTjaFL0sftBCjRpDYxGkB1cNexbpHXQorvqh8EdFHs8v46iLeh+cEZw==",
         "dependencies": {
-          "IPNetwork2": "3.5.3"
+          "IPNetwork2": "[3.5.3, 4.0.0)"
         }
       },
       "ILRepack.Lib.MSBuild.Task": {
         "type": "Direct",
-        "requested": "[2.0.44.1, )",
-        "resolved": "2.0.44.1",
-        "contentHash": "3XeHBO90AI5ggjmSeaSCVWuMuVWvNj+67ghtjTlOjhFSwhsFOJ3YU0GB/Zk19DG1grgHcJY195SIxCFVRiWf9Q=="
+        "requested": "[2.0.44.2, )",
+        "resolved": "2.0.44.2",
+        "contentHash": "53H6rOrVGPDBUU0GqEHefptus3ER34szVsVv1WfKr3Dh666ha5s0Eui9znxTztHaudWlSEUb6hJSGg4cA+wn2g=="
       },
       "IPNetwork2": {
         "type": "Direct",
@@ -72,9 +72,9 @@
       },
       "Unfucked": {
         "type": "Direct",
-        "requested": "[0.0.1-beta.32, )",
-        "resolved": "0.0.1-beta.32",
-        "contentHash": "9y5QAqoQPbPsIa+8saPATJLzhKs4q4bxq+71nkNIHrCQxD1CkEP7tJ7e+Xpo2/zAlvo+4l+Un61KZv7PihBKPQ==",
+        "requested": "[0.0.1-beta.35, )",
+        "resolved": "0.0.1-beta.35",
+        "contentHash": "nCHnvOKfQxgL+b1ljO6haFK0+7+h9a3T/KXWISnY6RY9r0/E7mUea5WKfPW+ucPea8Y+ZW3TVpUm2WuGEEyBQQ==",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "8.0.0",
           "System.Collections.Immutable": "8.0.0"

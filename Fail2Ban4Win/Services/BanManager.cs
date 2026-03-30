@@ -5,19 +5,12 @@ using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
 using Fail2Ban4Win.Injection;
 using Fail2Ban4Win.Plugins;
-using NLog;
 using Plugins;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Unfucked;
 using WindowsFirewallHelper;
 using WindowsFirewallHelper.Addresses;
 using WindowsFirewallHelper.FirewallRules;
@@ -26,7 +19,7 @@ namespace Fail2Ban4Win.Services;
 
 public interface BanManager: IDisposable;
 
-public class BanManagerImpl: BanManager {
+public sealed class BanManagerImpl: BanManager {
 
     private static readonly Logger LOGGER = LogManager.GetLogger(nameof(BanManagerImpl));
 
@@ -76,8 +69,8 @@ public class BanManagerImpl: BanManager {
                         }
                     }
                 } else {
-                    DateTime now             = DateTime.Now;
-                    int      scheduledUnbans = 0;
+                    DateTimeOffset now             = DateTimeOffset.Now;
+                    int            scheduledUnbans = 0;
                     foreach (FirewallWASRule oldRule in oldRules) {
                         if (parseBan(oldRule) is {} ban) {
                             TimeSpan remainingBanDuration = ban.End - now;
@@ -112,8 +105,12 @@ public class BanManagerImpl: BanManager {
         }
     }
 
-    private void onFailure(object sender, IPAddress ipAddress) {
-        IPNetwork2           subnet            = IPNetwork2.Parse(ipAddress, subnetMask);
+    private void onFailure(object sender, FailureParams failure) {
+        foreach (IFail2Ban4WinPlugin plugin in pluginManager.Plugins) {
+            plugin.OnAuthFailureDetected(failure);
+        }
+
+        IPNetwork2           subnet            = IPNetwork2.Parse(failure.Sender, subnetMask);
         SubnetFailureHistory failuresForSubnet = failures.GetOrAdd(subnet, _ => new ArrayListSubnetFailureHistory(configuration.maxAllowedFailures));
         BanParams?           ban               = null;
 
@@ -173,9 +170,9 @@ public class BanManagerImpl: BanManager {
 
         initialRuleDeletionDone.Wait(cancellationTokenSource.Token);
 
-        DateTime  now           = DateTime.Now;
-        TimeSpan  unbanDuration = getUnbanDuration(clientFailureHistory.banCount);
-        BanParams ban           = new(subnet, now, unbanDuration, clientFailureHistory.banCount);
+        DateTimeOffset now           = DateTimeOffset.Now;
+        TimeSpan       unbanDuration = getUnbanDuration(clientFailureHistory.banCount);
+        BanParams      ban           = new(subnet, now, unbanDuration, clientFailureHistory.banCount);
         FirewallWASRuleWin7 rule = new(generateRuleName(subnet), FirewallAction.Block, FirewallDirection.Inbound, ALL_PROFILES) {
             Description     = generateRuleDescription(ban),
             Grouping        = GROUP_NAME,
@@ -200,9 +197,8 @@ public class BanManagerImpl: BanManager {
     }
 
     private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => Tasks.Delay(unbanDuration, cancellationTokenSource.Token)
-        .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled, TaskScheduler.Current)
-        .ContinueWith(result => LOGGER.Error(result.Exception, "Exception unbanning subnet {subnet}", subnet), cancellationTokenSource.Token, TaskContinuationOptions.OnlyOnFaulted,
-            TaskScheduler.Current);
+        .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled)
+        .ContinueWith(result => LOGGER.Error(result.Exception, "Exception unbanning subnet {subnet}", subnet), cancellationTokenSource.Token, TaskContinuationOptions.OnlyOnFaulted);
 
     /// <summary>For first offenses, this returns <c>banPeriod</c> (from <c>configuration.json</c>). For repeated offenses, the ban period is increased by <c>banRepeatedOffenseCoefficient</c> each time. The ban period stops increasing after <c>banRepeatedOffenseMax</c> offenses.</summary>
     /// <remarks>
@@ -245,8 +241,12 @@ public class BanManagerImpl: BanManager {
     }
 
     private static BanParams? parseBan(FirewallWASRule firewallRule) =>
-        parseRuleName(firewallRule.Name) is {} subnet && parseRuleDescription(firewallRule.Description) is var (bannedTime, unbanTime, offenseCount)
-            ? new BanParams(subnet, bannedTime, unbanTime - bannedTime, offenseCount) : null;
+        parseRuleName(firewallRule.Name) is {} subnet
+        && BAN_DESCRIPTION_PATTERN.Match(firewallRule.Description) is { Success: true } match
+        && DateTimeOffset.TryParseExact(match.Groups["banned"].Value, "s", null, DateTimeStyles.AssumeLocal, out DateTimeOffset bannedTime)
+        && DateTimeOffset.TryParseExact(match.Groups["unban"].Value, "s", null, DateTimeStyles.AssumeLocal, out DateTimeOffset unbanTime)
+        && int.TryParse(match.Groups["offense"].Value, NumberStyles.AllowThousands, null, out int offense)
+            ? new BanParams(subnet, bannedTime, unbanTime - bannedTime, offense) : null;
 
     private static string generateRuleName(IPNetwork2 subnet) => $"Banned {subnet}";
 
@@ -258,13 +258,6 @@ public class BanManagerImpl: BanManager {
     private static string generateRuleDescription(BanParams ban) => $"Banned {ban.Start:s}. Will unban {ban.Start + ban.Duration:s}. Offense #{ban.OffenseCount:N0}.";
 
     private static readonly Regex BAN_DESCRIPTION_PATTERN = new(@"^Banned (?<banned>[\dT:-]+?)\. Will unban (?<unban>[\dT:-]+?)\. Offense #(?<offense>[\d, .']+?)\.$");
-
-    private static (DateTime bannedTime, DateTime unbanTime, int offenseCount)? parseRuleDescription(string ruleDescription) =>
-        BAN_DESCRIPTION_PATTERN.Match(ruleDescription) is { Success: true } match
-        && DateTime.TryParseExact(match.Groups["banned"].Value, "s", null, DateTimeStyles.AssumeLocal, out DateTime bannedTime)
-        && DateTime.TryParseExact(match.Groups["unban"].Value, "s", null, DateTimeStyles.AssumeLocal, out DateTime unbanTme)
-        && int.TryParse(match.Groups["offense"].Value, NumberStyles.AllowThousands, null, out int offense)
-            ? (bannedTime, unbanTme, offense) : null;
 
     public void Dispose() {
         eventLogListener.failure -= onFailure;

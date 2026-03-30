@@ -59,7 +59,7 @@ public class MainClassTest: IDisposable {
 
     [Fact]
     public async Task start() {
-        Task main = Task.Run(() => MainClass.Main(Array.Empty<string>()));
+        Task main = Task.Run(() => MainClass.Main([]));
 
         await Task.Delay(200);
 
@@ -70,13 +70,14 @@ public class MainClassTest: IDisposable {
 
     [Fact]
     public async Task stopWithCtrlC() {
-        Task main = Task.Run(() => MainClass.Main(Array.Empty<string>()));
+        Task main = Task.Run(() => MainClass.Main([]));
 
         await Task.Delay(200);
 
         ConsoleCancelEventArgs consoleCancelEventArgs = createInstance<ConsoleCancelEventArgs>(ConsoleSpecialKey.ControlC);
 
-        MainClass.onCtrlC(null, consoleCancelEventArgs);
+        consoleCancelEventArgs.Cancel = true;
+        MainClass.stop();
 
         await main;
     }
@@ -92,11 +93,11 @@ public class MainClassTest: IDisposable {
         CloseWindowStationSafeHandle originalWindowStation = PInvoke.GetProcessWindowStation_SafeHandle();
         try {
             testOutputHelper.WriteLine("Creating new window station.");
-            using CloseWindowStationSafeHandle nonInteractiveWindowStation = PInvoke.CreateWindowStation("hargle", 0, WINSTA_ALL_ACCESS, null);
+            using CloseWindowStationSafeHandle nonInteractiveWindowStation = PInvoke.CreateWindowStation("hargle", 0, WINSTA_ALL_ACCESS);
 
             PInvoke.SetProcessWindowStation(nonInteractiveWindowStation);
 
-            Task main = Task.Run(() => MainClass.Main(Array.Empty<string>()));
+            Task main = Task.Run(() => MainClass.Main([]));
 
             await Task.Delay(200);
 

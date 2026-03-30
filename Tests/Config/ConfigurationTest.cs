@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Injection;
@@ -26,46 +26,47 @@ public class ConfigurationTest: IDisposable {
     }
 
     private const string JSON = """
-                                {
-                                	"maxAllowedFailures": 9,
-                                	"failureWindow": "1.00:00:00",
-                                	"banPeriod": "1.00:00:00",
-                                    "banSubnetBits": 24,
-                                    "banRepeatedOffenseCoefficient": 1.5,
-                                    "banRepeatedOffenseMax": 4,
-                                    "neverBanSubnets": [
-                                        "127.0.0.1/8",
-                                        "192.168.1.0/24",
-                                        "67.210.32.33",
-                                        "73.202.12.148"
-                                    ],
-                                    "neverBanReservedSubnets": false,
-                                	"eventLogSelectors": [
-                                		{
-                                			"logName": "Security",
-                                			"eventId": 4625,
-                                			"ipAddressEventDataName": "IpAddress"
-                                		}, {
-                                			"logName": "Application",
-                                			"source": "sshd",
-                                			"eventId": 0,
-                                			"ipAddressPattern": "^sshd: PID \\d+: Failed password for(?: invalid user)? \\S+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d+ ssh\\d?$"
-                                		}, {
-                                            "logName": "Application",
-                                            "source": "MSExchangeFrontEndTransport",
-                                            "eventId": 1035,
-                                            "ipAddressEventDataIndex": 3,
-                                        }, {
-                                            "logName": "Microsoft-Windows-IIS-Logging/Logs",
-                                            "source": "IIS-Logging",
-                                            "eventId": 6200,
-                                            "ipAddressEventDataName": "c-ip",
-                                            "eventPredicate": "[EventData/Data[@Name='sc-status']=403]"
-                                        }
-                                	],
-                                    "isDryRun": true
-                                }
-                                """;
+        {
+        	"maxAllowedFailures": 9,
+        	"failureWindow": "1.00:00:00",
+        	"banPeriod": "1.00:00:00",
+            "banSubnetBits": 24,
+            "banRepeatedOffenseCoefficient": 1.5,
+            "banRepeatedOffenseMax": 4,
+            "neverBanSubnets": [
+                "127.0.0.1/8",
+                "192.168.1.0/24",
+                "67.210.32.33",
+                "73.202.12.148"
+            ],
+            "neverBanReservedSubnets": false,
+        	"eventLogSelectors": [
+        		{
+        		    "friendlyName": "RDP",
+        			"logName": "Security",
+        			"eventId": 4625,
+        			"ipAddressEventDataName": "IpAddress"
+        		}, {
+        			"logName": "Application",
+        			"source": "sshd",
+        			"eventId": 0,
+        			"ipAddressPattern": "^sshd: PID \\d+: Failed password for(?: invalid user)? \\S+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d+ ssh\\d?$"
+        		}, {
+                    "logName": "Application",
+                    "source": "MSExchangeFrontEndTransport",
+                    "eventId": 1035,
+                    "ipAddressEventDataIndex": 3,
+                }, {
+                    "logName": "Microsoft-Windows-IIS-Logging/Logs",
+                    "source": "IIS-Logging",
+                    "eventId": 6200,
+                    "ipAddressEventDataName": "c-ip",
+                    "eventPredicate": "[EventData/Data[@Name='sc-status']=403]"
+                }
+        	],
+            "isDryRun": true
+        }
+        """;
 
     [Fact]
     public void parse() {
@@ -96,6 +97,7 @@ public class ConfigurationTest: IDisposable {
         Assert.Equal(4, actualSelectors.Length);
 
         EventLogSelector rdpSelector = actualSelectors[0];
+        Assert.Equal("RDP", rdpSelector.friendlyName);
         Assert.Equal("Security", rdpSelector.logName);
         Assert.Equal(4625, rdpSelector.eventId);
         Assert.Equal("IpAddress", rdpSelector.ipAddressEventDataName);

@@ -1,24 +1,14 @@
-﻿#nullable enable
-
-using System;
-using System.ComponentModel;
-using System.Globalization;
-using System.Net;
+#nullable enable
 
 namespace Fail2Ban4Win.Config;
 
-public class IPNetworkDeserializer: TypeConverter {
+public sealed class IPNetworkDeserializer: TypeConverter {
 
-    public static void register() {
-        TypeDescriptor.AddAttributes(typeof(IPNetwork2), new TypeConverterAttribute(typeof(IPNetworkDeserializer)));
-    }
+    public static void register() => TypeDescriptor.AddAttributes(typeof(IPNetwork2), new TypeConverterAttribute(typeof(IPNetworkDeserializer)));
 
-    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) {
-        return sourceType == typeof(string);
-    }
+    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) => sourceType == typeof(string);
 
-    public override object? ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) {
-        return IPNetwork2.Parse((string) value, CidrGuess.ClassLess);
-    }
+    public override object? ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object? value) =>
+        value is string v ? IPNetwork2.Parse(v, CidrGuess.ClassLess) : null;
 
 }

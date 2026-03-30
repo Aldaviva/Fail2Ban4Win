@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Fail2Ban4Win.Data;
+﻿namespace Fail2Ban4Win.Data;
 
 public interface SubnetFailureHistory {
 

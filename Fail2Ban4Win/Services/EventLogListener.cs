@@ -3,12 +3,7 @@
 using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Data;
 using Fail2Ban4Win.Facades;
-using NLog;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
-using System.Linq;
-using System.Net;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -17,20 +12,20 @@ namespace Fail2Ban4Win.Services;
 
 public interface EventLogListener: IDisposable {
 
-    public event EventHandler<IPAddress> failure;
+    public event EventHandler<FailureParams> failure;
 
 }
 
-public class EventLogListenerImpl: EventLogListener {
+public sealed class EventLogListenerImpl: EventLogListener {
 
     private static readonly Logger LOGGER = LogManager.GetLogger(nameof(EventLogListenerImpl));
 
     private static readonly Regex DEFAULT_IPV4_ADDRESS_PATTERN = new(@"(?<ipAddress>\b(?:(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\.){3}(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\b)",
         RegexOptions.None, RegexDeserializer.MATCH_TIMEOUT);
 
-    public event EventHandler<IPAddress>? failure;
+    public event EventHandler<FailureParams>? failure;
 
-    private readonly IEnumerable<EventLogWatcherFacade> watchers;
+    private readonly ICollection<EventLogWatcherFacade> watchers;
 
     public EventLogListenerImpl(Configuration configuration, Func<EventLogQueryFacade, EventLogWatcherFacade> eventLogWatcherFacadeFactory) {
         watchers = configuration.eventLogSelectors.Select(selector => {
@@ -84,9 +79,13 @@ public class EventLogListenerImpl: EventLogListener {
                     IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>().Select(match => IPAddress.Parse(match.Groups["ipAddress"].Value));
 
                     foreach (IPAddress failingIpAddress in failingIpAddresses) {
-                        LOGGER.Info("Authentication failure detected from {addr}{selector} (log={log}, event={id}, source={source})", failingIpAddress,
-                            selector.selectorName != null ? $" using selector {selector.selectorName}" : string.Empty, record.LogName, record.Id, record.ProviderName);
-                        failure?.Invoke(this, failingIpAddress);
+                        FailureParams failureParams = new(failingIpAddress, selector.friendlyName, record.LogName, record.Id, record.ProviderName,
+                            record.TimeCreated is {} timeCreated ? new DateTimeOffset(timeCreated) : DateTimeOffset.UtcNow);
+
+                        LOGGER.Info("Authentication failure detected from {addr} (selector={selector}, log={log}, event={id}, source={source})", failureParams.Sender,
+                            failureParams.SelectorFriendlyName ?? string.Empty, failureParams.Log, failureParams.EventId, failureParams.Source);
+
+                        failure?.Invoke(this, failureParams);
                     }
                 }
             } catch (RegexMatchTimeoutException) {
@@ -98,14 +97,13 @@ public class EventLogListenerImpl: EventLogListener {
 
     /// <summary>https://docs.microsoft.com/en-us/previous-versions/bb399427(v=vs.90)</summary>
     private static string selectorToQuery(EventLogSelector selector) {
-        StringBuilder queryBuilder = new("*");
-        queryBuilder.Append($"[System/EventID={selector.eventId}]");
+        StringBuilder queryBuilder = new($"*[System/EventID={selector.eventId}]");
 
-        if (!string.IsNullOrWhiteSpace(selector.source)) {
+        if (selector.source.HasText()) {
             queryBuilder.Append($"[System/Provider/@Name=\"{SecurityElement.Escape(selector.source)}\"]");
         }
 
-        if (!string.IsNullOrWhiteSpace(selector.eventPredicate)) {
+        if (selector.eventPredicate.HasText()) {
             queryBuilder.Append(selector.eventPredicate);
         }
 
@@ -116,6 +114,7 @@ public class EventLogListenerImpl: EventLogListener {
         foreach (EventLogWatcherFacade watcher in watchers) {
             watcher.Dispose();
         }
+        watchers.Clear();
     }
 
 }

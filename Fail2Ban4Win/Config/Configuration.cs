@@ -1,16 +1,12 @@
 #nullable enable
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Text.RegularExpressions;
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global - don't mess with the deserializer
 
 namespace Fail2Ban4Win.Config;
 
-public class Configuration: ICloneable {
+public sealed class Configuration: ICloneable {
 
     public bool isDryRun { get; set; }
     public int maxAllowedFailures { get; set; } = 9;
@@ -43,9 +39,9 @@ public class Configuration: ICloneable {
 
 }
 
-public class EventLogSelector: ICloneable {
+public sealed class EventLogSelector: ICloneable {
 
-    public string? selectorName { get; set; }
+    public string? friendlyName { get; set; }
     public string logName { get; set; } = null!;
     public string? source { get; set; }
     public int eventId { get; set; }
@@ -55,10 +51,10 @@ public class EventLogSelector: ICloneable {
     public string? eventPredicate { get; set; }
 
     public override string ToString() =>
-        $"{nameof(selectorName)}: {selectorName}, {nameof(logName)}: {logName}, {nameof(source)}: {source}, {nameof(eventId)}: {eventId}, {nameof(ipAddressPattern)}: {ipAddressPattern}, {nameof(ipAddressEventDataName)}: {ipAddressEventDataName}, {nameof(ipAddressEventDataIndex)}: {ipAddressEventDataIndex}, {nameof(eventPredicate)}: {eventPredicate}";
+        $"{nameof(friendlyName)}: {friendlyName}, {nameof(logName)}: {logName}, {nameof(source)}: {source}, {nameof(eventId)}: {eventId}, {nameof(ipAddressPattern)}: {ipAddressPattern}, {nameof(ipAddressEventDataName)}: {ipAddressEventDataName}, {nameof(ipAddressEventDataIndex)}: {ipAddressEventDataIndex}, {nameof(eventPredicate)}: {eventPredicate}";
 
     public object Clone() => new EventLogSelector {
-        selectorName            = selectorName,
+        friendlyName            = friendlyName,
         ipAddressEventDataName  = ipAddressEventDataName,
         eventId                 = eventId,
         ipAddressPattern        = ipAddressPattern is not null ? new Regex(ipAddressPattern.ToString(), ipAddressPattern.Options, ipAddressPattern.MatchTimeout) : null,

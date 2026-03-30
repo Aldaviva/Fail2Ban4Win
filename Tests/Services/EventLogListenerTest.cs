@@ -1,9 +1,10 @@
-﻿#nullable enable
+#nullable enable
 
 using Fail2Ban4Win.Config;
 using Fail2Ban4Win.Facades;
 using Fail2Ban4Win.Services;
 using FakeItEasy;
+using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -78,25 +79,25 @@ public class EventLogListenerTest: IDisposable {
     [Fact]
     public void queryWithoutSource() {
         EventLogQueryFacade actual = queries[0];
-        Assert.Equal("Security", actual.path);
-        Assert.Equal(PathType.LogName, actual.pathType);
-        Assert.Equal("*[System/EventID=4625]", actual.query);
+        actual.path.Should().Be("Security");
+        actual.pathType.Should().Be(PathType.LogName);
+        actual.query.Should().Be("*[System/EventID=4625]");
     }
 
     [Fact]
     public void queryWithSource() {
         EventLogQueryFacade actual = queries[1];
-        Assert.Equal("Application", actual.path);
-        Assert.Equal(PathType.LogName, actual.pathType);
-        Assert.Equal("*[System/EventID=0][System/Provider/@Name=\"sshd\"]", actual.query);
+        actual.path.Should().Be("Application");
+        actual.pathType.Should().Be(PathType.LogName);
+        actual.query.Should().Be("*[System/EventID=0][System/Provider/@Name=\"sshd\"]");
     }
 
     [Fact]
     public void queryWithSourceAndPredicate() {
         EventLogQueryFacade actual = queries[3];
-        Assert.Equal("Microsoft-Windows-IIS-Logging/Logs", actual.path);
-        Assert.Equal(PathType.LogName, actual.pathType);
-        Assert.Equal("*[System/EventID=6200][System/Provider/@Name=\"IIS-Logging\"][EventData/Data[@Name='sc-status']=403]", actual.query);
+        actual.path.Should().Be("Microsoft-Windows-IIS-Logging/Logs");
+        actual.pathType.Should().Be(PathType.LogName);
+        actual.query.Should().Be("*[System/EventID=6200][System/Provider/@Name=\"IIS-Logging\"][EventData/Data[@Name='sc-status']=403]");
     }
 
     [Fact]
@@ -104,7 +105,7 @@ public class EventLogListenerTest: IDisposable {
         EventLogRecordFacade record = A.Fake<EventLogRecordFacade>();
         A.CallTo(() => record.GetPropertyValues(A<EventLogPropertySelectorFacade>._)).Returns(["141.98.9.20"]);
         IPAddress? actualAddress = null;
-        listener.failure += (_, address) => actualAddress = address;
+        listener.failure += (_, failureParams) => actualAddress = failureParams.Sender;
 
         watcherFacades[0].EventRecordWritten += Raise.With(null, new EventRecordWrittenEventArgsFacade(record));
 
@@ -112,7 +113,7 @@ public class EventLogListenerTest: IDisposable {
             selector.propertyQueries.SequenceEqual(new[] { "Event/EventData/Data[@Name=\"IpAddress\"]" })))).MustHaveHappened();
         A.CallTo(() => record.Properties).MustNotHaveHappened();
 
-        Assert.Equal(IPAddress.Parse("141.98.9.20"), actualAddress);
+        actualAddress.Should().Be(IPAddress.Parse("141.98.9.20"));
     }
 
     [Fact]
@@ -121,14 +122,14 @@ public class EventLogListenerTest: IDisposable {
         A.CallTo(() => record.Properties)
             .Returns([new EventPropertyFacade("sshd: PID 29722: Failed password for invalid user root from 71.194.180.25 port 48316 ssh2")]);
         IPAddress? actualAddress = null;
-        listener.failure += (_, address) => actualAddress = address;
+        listener.failure += (_, failureParams) => actualAddress = failureParams.Sender;
 
         watcherFacades[1].EventRecordWritten += Raise.With(null, new EventRecordWrittenEventArgsFacade(record));
 
         A.CallTo(() => record.Properties).MustHaveHappened();
         A.CallTo(() => record.GetPropertyValues(A<EventLogPropertySelectorFacade>._)).MustNotHaveHappened();
 
-        Assert.Equal(IPAddress.Parse("71.194.180.25"), actualAddress);
+        actualAddress.Should().Be(IPAddress.Parse("71.194.180.25"));
     }
 
     [Fact]
@@ -177,7 +178,8 @@ public class EventLogListenerTest: IDisposable {
             ipAddressPattern = new Regex("hello")
         });
 
-        Assert.Throws<ArgumentException>(() => new EventLogListenerImpl(invalidConfiguration, query => new EventLogWatcherFacadeImpl(query)));
+        var thrower = () => new EventLogListenerImpl(invalidConfiguration, query => new EventLogWatcherFacadeImpl(query));
+        thrower.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -190,14 +192,14 @@ public class EventLogListenerTest: IDisposable {
             new EventPropertyFacade("42.85.233.11")
         ]);
         IPAddress? actualAddress = null;
-        listener.failure += (_, address) => actualAddress = address;
+        listener.failure += (_, failureParams) => actualAddress = failureParams.Sender;
 
         watcherFacades[2].EventRecordWritten += Raise.With(null, new EventRecordWrittenEventArgsFacade(record));
 
         A.CallTo(() => record.Properties).MustHaveHappened();
         A.CallTo(() => record.GetPropertyValues(A<EventLogPropertySelectorFacade>._)).MustNotHaveHappened();
 
-        Assert.Equal(IPAddress.Parse("42.85.233.11"), actualAddress);
+        actualAddress.Should().Be(IPAddress.Parse("42.85.233.11"));
     }
 
 }

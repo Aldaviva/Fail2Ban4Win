@@ -6,6 +6,7 @@ using Fail2Ban4Win.Facades;
 using Fail2Ban4Win.Plugins;
 using Fail2Ban4Win.Services;
 using FakeItEasy;
+using FluentAssertions;
 using Plugins;
 using System;
 using System.Collections.Generic;
@@ -24,9 +25,9 @@ namespace Tests.Services;
 
 public class BanManagerTest: IDisposable {
 
-    private static readonly IPAddress SOURCE_ADDRESS = IPAddress.Parse("192.0.2.0");
-
     private const int MAX_ALLOWED_FAILURES = 2;
+
+    private static readonly IPAddress SOURCE_ADDRESS = IPAddress.Parse("192.0.2.0");
 
     private readonly BanManagerImpl                      banManager;
     private readonly EventLogListener                    eventLogListener = A.Fake<EventLogListener>();
@@ -36,7 +37,7 @@ public class BanManagerTest: IDisposable {
     private readonly Configuration configuration = new() {
         isDryRun                      = false,
         failureWindow                 = TimeSpan.FromMilliseconds(50),
-        banPeriod                     = TimeSpan.FromMilliseconds(200),
+        banPeriod                     = TimeSpan.FromSeconds(1),
         banSubnetBits                 = 8,
         banRepeatedOffenseCoefficient = 1,
         banRepeatedOffenseMax         = 4,
@@ -58,20 +59,20 @@ public class BanManagerTest: IDisposable {
     [Fact]
     public void dontBanAfterInsufficientFailures() {
         for (int i = 0; i < MAX_ALLOWED_FAILURES; i++) {
-            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            eventLogListener.failure += Raise.With(null, new FailureParams(SOURCE_ADDRESS, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.Empty(firewallRules);
+        firewallRules.Should().BeEmpty();
     }
 
     [Fact]
     public void dontBanReservedAddressByDefault() {
         IPAddress reservedAddress = IPAddress.Parse("192.168.1.1");
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, reservedAddress);
+            eventLogListener.failure += Raise.With(null, new FailureParams(reservedAddress, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.Empty(firewallRules);
+        firewallRules.Should().BeEmpty();
     }
 
     [Fact]
@@ -80,10 +81,10 @@ public class BanManagerTest: IDisposable {
 
         IPAddress reservedAddress = IPAddress.Parse("192.168.1.1");
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, reservedAddress);
+            eventLogListener.failure += Raise.With(null, new FailureParams(reservedAddress, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.Empty(firewallRules);
+        firewallRules.Should().BeEmpty();
     }
 
     [Fact]
@@ -92,62 +93,62 @@ public class BanManagerTest: IDisposable {
 
         IPAddress reservedAddress = IPAddress.Parse("192.168.1.1");
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, reservedAddress);
+            eventLogListener.failure += Raise.With(null, new FailureParams(reservedAddress, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.NotEmpty(firewallRules);
+        firewallRules.Should().NotBeEmpty();
     }
 
     [Fact]
     public void dontBanLoopbackAddress() {
         IPAddress reservedAddress = IPAddress.Parse("127.0.0.1");
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, reservedAddress);
+            eventLogListener.failure += Raise.With(null, new FailureParams(reservedAddress, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.Empty(firewallRules);
+        firewallRules.Should().BeEmpty();
     }
 
     [Fact]
     public void dontBanWhitelistedAddress() {
         IPAddress reservedAddress = IPAddress.Parse("73.202.12.148");
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, reservedAddress);
+            eventLogListener.failure += Raise.With(null, new FailureParams(reservedAddress, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.Empty(firewallRules);
+        firewallRules.Should().BeEmpty();
     }
 
     [Fact]
     public void bansAfterEnoughFailures() {
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            eventLogListener.failure += Raise.With(null, new FailureParams(SOURCE_ADDRESS, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.NotEmpty(firewallRules);
-        FirewallWASRule actual = Assert.Single(firewallRules);
-        Assert.True(actual.IsEnable);
-        Assert.Equal("Banned 192.0.2.0/24", actual.Name);
-        Assert.Equal("Fail2Ban4Win", actual.Grouping);
-        Assert.Equal(FirewallAction.Block, actual.Action);
-        Assert.Equal(FirewallDirection.Inbound, actual.Direction);
-        Assert.Equal(NetworkAddress.Parse("192.0.2.0/24"), actual.RemoteAddresses[0]);
+        firewallRules.Should().HaveCount(1);
+        FirewallWASRule actual = firewallRules[0];
+        actual.IsEnable.Should().BeTrue();
+        actual.Name.Should().Be("Banned 192.0.2.0/24");
+        actual.Grouping.Should().Be("Fail2Ban4Win");
+        actual.Action.Should().Be(FirewallAction.Block);
+        actual.Direction.Should().Be(FirewallDirection.Inbound);
+        actual.RemoteAddresses[0].Should().Be(NetworkAddress.Parse("192.0.2.0/24"));
     }
 
     [Fact]
     public void dontBanWhenSameRuleAlreadyExists() {
         for (int i = 0; i < 2 * (MAX_ALLOWED_FAILURES + 1); i++) {
-            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            eventLogListener.failure += Raise.With(null, new FailureParams(SOURCE_ADDRESS, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.NotEmpty(firewallRules);
-        FirewallWASRule actual = Assert.Single(firewallRules);
-        Assert.True(actual.IsEnable);
-        Assert.Equal("Banned 192.0.2.0/24", actual.Name);
-        Assert.Equal("Fail2Ban4Win", actual.Grouping);
-        Assert.Equal(FirewallAction.Block, actual.Action);
-        Assert.Equal(FirewallDirection.Inbound, actual.Direction);
-        Assert.Equal(NetworkAddress.Parse("192.0.2.0/24"), actual.RemoteAddresses[0]);
+        firewallRules.Should().HaveCount(1);
+        FirewallWASRule actual = firewallRules[0];
+        actual.IsEnable.Should().BeTrue();
+        actual.Name.Should().Be("Banned 192.0.2.0/24");
+        actual.Grouping.Should().Be("Fail2Ban4Win");
+        actual.Action.Should().Be(FirewallAction.Block);
+        actual.Direction.Should().Be(FirewallDirection.Inbound);
+        actual.RemoteAddresses[0].Should().Be(NetworkAddress.Parse("192.0.2.0/24"));
     }
 
     [Fact]
@@ -159,10 +160,10 @@ public class BanManagerTest: IDisposable {
         BanManagerImpl manager = new(eventLogListener, configuration, firewallFacade, pluginManager);
 
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            eventLogListener.failure += Raise.With(null, new FailureParams(SOURCE_ADDRESS, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.Empty(firewallRules);
+        firewallRules.Should().BeEmpty();
 
         manager.Dispose();
     }
@@ -177,16 +178,16 @@ public class BanManagerTest: IDisposable {
         CountdownEvent rulesRemoved = new(firewallRules.Count);
         firewallRules.ruleRemoved += (_, _) => rulesRemoved.Signal();
 
-        Assert.NotEmpty(firewallRules);
+        firewallRules.Should().NotBeEmpty();
 
         BanManagerImpl manager = new(eventLogListener, configuration, firewallFacade, pluginManager);
 
-        Assert.NotEmpty(firewallRules);
+        firewallRules.Should().NotBeEmpty();
 
         //deletion runs asynchronously to speed up startup
         rulesRemoved.Wait(TimeSpan.FromSeconds(10));
 
-        Assert.Empty(firewallRules);
+        firewallRules.Should().BeEmpty();
 
         manager.Dispose();
     }
@@ -203,16 +204,16 @@ public class BanManagerTest: IDisposable {
 
         foreach (IPAddress sourceAddress in sourceAddresses) {
             for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-                eventLogListener.failure += Raise.With(null, sourceAddress);
+                eventLogListener.failure += Raise.With(null, new FailureParams(sourceAddress, null, "", 0, "", DateTimeOffset.UtcNow));
             }
         }
 
-        Assert.NotEmpty(firewallRules);
+        firewallRules.Should().NotBeEmpty();
 
         rulesRemoved.Wait(TimeSpan.FromSeconds(10));
 
         testOutput.WriteLine("banPeriod = {0}", configuration.banPeriod);
-        Assert.Empty(firewallRules);
+        firewallRules.Should().BeEmpty();
     }
 
     [Fact]
@@ -228,15 +229,15 @@ public class BanManagerTest: IDisposable {
         A.CallTo(() => firewallFacade.Rules).Returns(throwingFirewallRules);
 
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, sourceAddress);
+            eventLogListener.failure += Raise.With(null, new FailureParams(sourceAddress, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.NotEmpty(firewallRules);
+        firewallRules.Should().NotBeEmpty();
 
         rulesRemoved.Wait(TimeSpan.FromSeconds(10));
 
         testOutput.WriteLine("banPeriod = {0}", configuration.banPeriod);
-        Assert.NotEmpty(firewallRules);
+        firewallRules.Should().NotBeEmpty();
     }
 
     [Theory]
@@ -247,29 +248,29 @@ public class BanManagerTest: IDisposable {
 
         TimeSpan actual = banManager.getUnbanDuration(offense);
 
-        Assert.Equal(expectedDuration, actual);
+        actual.Should().Be(expectedDuration);
     }
 
-    public static readonly IEnumerable<object[]> BAN_DURATION_DATA = [
-        [1, 1.0, TimeSpan.FromMinutes(1)],
-        [2, 1.0, TimeSpan.FromMinutes(2)],
-        [3, 1.0, TimeSpan.FromMinutes(3)],
-        [4, 1.0, TimeSpan.FromMinutes(4)],
-        [5, 1.0, TimeSpan.FromMinutes(4)],
-        [6, 1.0, TimeSpan.FromMinutes(4)],
-        [1, 1.5, TimeSpan.FromMinutes(1)],
-        [2, 1.5, TimeSpan.FromMinutes(2.5)],
-        [3, 1.5, TimeSpan.FromMinutes(4)],
-        [4, 1.5, TimeSpan.FromMinutes(5.5)],
-        [5, 1.5, TimeSpan.FromMinutes(5.5)],
-        [6, 1.5, TimeSpan.FromMinutes(5.5)],
-        [1, 2.0, TimeSpan.FromMinutes(1)],
-        [2, 2.0, TimeSpan.FromMinutes(3)],
-        [3, 2.0, TimeSpan.FromMinutes(5)],
-        [4, 2.0, TimeSpan.FromMinutes(7)],
-        [5, 2.0, TimeSpan.FromMinutes(7)],
-        [6, 2.0, TimeSpan.FromMinutes(7)],
-    ];
+    public static readonly TheoryData<int, double, TimeSpan> BAN_DURATION_DATA = new() {
+        { 1, 1.0, TimeSpan.FromMinutes(1) },
+        { 2, 1.0, TimeSpan.FromMinutes(2) },
+        { 3, 1.0, TimeSpan.FromMinutes(3) },
+        { 4, 1.0, TimeSpan.FromMinutes(4) },
+        { 5, 1.0, TimeSpan.FromMinutes(4) },
+        { 6, 1.0, TimeSpan.FromMinutes(4) },
+        { 1, 1.5, TimeSpan.FromMinutes(1) },
+        { 2, 1.5, TimeSpan.FromMinutes(2.5) },
+        { 3, 1.5, TimeSpan.FromMinutes(4) },
+        { 4, 1.5, TimeSpan.FromMinutes(5.5) },
+        { 5, 1.5, TimeSpan.FromMinutes(5.5) },
+        { 6, 1.5, TimeSpan.FromMinutes(5.5) },
+        { 1, 2.0, TimeSpan.FromMinutes(1) },
+        { 2, 2.0, TimeSpan.FromMinutes(3) },
+        { 3, 2.0, TimeSpan.FromMinutes(5) },
+        { 4, 2.0, TimeSpan.FromMinutes(7) },
+        { 5, 2.0, TimeSpan.FromMinutes(7) },
+        { 6, 2.0, TimeSpan.FromMinutes(7) }
+    };
 
     [Fact]
     public void longDelaysDoNotCrash() {
@@ -278,10 +279,10 @@ public class BanManagerTest: IDisposable {
 
         IPAddress sourceAddress = IPAddress.Parse("198.51.100.1");
         for (int i = 0; i < configuration.maxAllowedFailures + 1; i++) {
-            eventLogListener.failure += Raise.With(null, sourceAddress);
+            eventLogListener.failure += Raise.With(null, new FailureParams(sourceAddress, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.NotEmpty(firewallRules);
+        firewallRules.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -294,38 +295,39 @@ public class BanManagerTest: IDisposable {
         A.CallTo(() => plugin.OnSubnetBanned(bans._)).DoesNothing();
 
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            eventLogListener.failure += Raise.With(null, new FailureParams(SOURCE_ADDRESS, null, "", 0, "", DateTimeOffset.UtcNow));
         }
 
-        Assert.NotEmpty(firewallRules);
+        firewallRules.Should().NotBeEmpty();
         BanParams actualBan = bans.GetLastValue();
-        Assert.Equal(IPNetwork2.Parse("192.0.2.0/24"), actualBan.Subnet);
-        Assert.Equal(TimeSpan.FromHours(1), actualBan.Duration);
-        Assert.Equal(1, actualBan.OffenseCount);
-        Assert.Equal(actualBan.Start, DateTime.Now, TimeSpan.FromSeconds(2));
-        Assert.Equal(actualBan.End, DateTime.Now + TimeSpan.FromHours(1), TimeSpan.FromSeconds(2));
+        actualBan.Subnet.Should().Be(IPNetwork2.Parse("192.0.2.0/24"));
+        actualBan.Duration.Should().Be(TimeSpan.FromHours(1));
+        actualBan.OffenseCount.Should().Be(1);
+        actualBan.Start.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(2));
+        actualBan.End.Should().BeCloseTo(DateTimeOffset.Now + TimeSpan.FromHours(1), TimeSpan.FromSeconds(2));
     }
 
     [Fact]
     public void pluginUnbanCallback() {
+        DateTimeOffset      now    = DateTimeOffset.Now;
         IFail2Ban4WinPlugin plugin = A.Fake<IFail2Ban4WinPlugin>();
         Captured<BanParams> bans   = A.Captured<BanParams>();
         A.CallTo(() => pluginManager.Plugins).Returns([plugin]);
         using ManualResetEventSlim callbackFired = new();
-        A.CallTo(() => plugin.OnBanLifted(bans._)).Invokes(() => callbackFired.Set());
+        A.CallTo(() => plugin.OnBanLifted(bans._)).Invokes(callbackFired.Set);
 
         for (int i = 0; i < MAX_ALLOWED_FAILURES + 1; i++) {
-            eventLogListener.failure += Raise.With(null, SOURCE_ADDRESS);
+            eventLogListener.failure += Raise.With(null, new FailureParams(SOURCE_ADDRESS, null, "", 0, "", now));
         }
 
         callbackFired.Wait(TimeSpan.FromSeconds(10));
 
         BanParams actualBan = bans.GetLastValue();
-        Assert.Equal(IPNetwork2.Parse("192.0.2.0/24"), actualBan.Subnet);
-        Assert.InRange(actualBan.Duration, TimeSpan.Zero, TimeSpan.FromMilliseconds(200));
-        Assert.Equal(1, actualBan.OffenseCount);
-        Assert.Equal(actualBan.Start, DateTime.Now, TimeSpan.FromSeconds(2));
-        Assert.Equal(actualBan.End, DateTime.Now + TimeSpan.FromMilliseconds(200), TimeSpan.FromSeconds(2));
+        actualBan.Subnet.Should().Be(IPNetwork2.Parse("192.0.2.0/24"));
+        actualBan.OffenseCount.Should().Be(1);
+        actualBan.Start.Should().BeCloseTo(now, TimeSpan.FromSeconds(2), "start time");
+        actualBan.End.Should().BeCloseTo(now + TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), "end time");
+        actualBan.Duration.Should().Be(TimeSpan.FromSeconds(1), "duration");
     }
 
     private class FakeFirewallRulesCollection: List<FirewallWASRule>, IFirewallWASRulesCollection<FirewallWASRule> {
