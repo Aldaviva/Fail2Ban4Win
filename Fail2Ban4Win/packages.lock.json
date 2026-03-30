@@ -4,9 +4,9 @@
     ".NETFramework,Version=v4.7.2": {
       "Fail2Ban4Win.Abstractions": {
         "type": "Direct",
-        "requested": "[0.0.3, )",
-        "resolved": "0.0.3",
-        "contentHash": "9la5mN9abjPDoVecI4suqHaNZMssvfyzTjaFL0sftBCjRpDYxGkB1cNexbpHXQorvqh8EdFHs8v46iLeh+cEZw==",
+        "requested": "[0.0.4, )",
+        "resolved": "0.0.4",
+        "contentHash": "3XQI3voMeFTFp1yqV74PBKZjZO6lwWJGLGc7B1pgg3RMMe0k8pklFRWm+mOmh8ccd2LrSq2hP3jvFowtbn1tWg==",
         "dependencies": {
           "IPNetwork2": "[3.5.3, 4.0.0)"
         }
