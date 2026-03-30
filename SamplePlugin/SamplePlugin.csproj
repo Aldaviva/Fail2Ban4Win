@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net472</TargetFramework>
+        <AssemblyName>Fail2Ban4Win.Plugins.$(MSBuildProjectName)</AssemblyName>
+        <RootNamespace>$(AssemblyName)</RootNamespace>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Authors>My Name</Authors>
+        <Copyright>© 2026 $(Authors)</Copyright>
+        <Company>$(Authors)</Company>
+        <DebugType>embedded</DebugType>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Fail2Ban4Win.Abstractions" Version="0.0.3" ExcludeAssets="runtime" />
+    </ItemGroup>
+
+</Project>

@@ -3,7 +3,8 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Fail2Ban4Win.$(MSBuildProjectName)</AssemblyName>
-        <Version>0.0.3</Version>
+        <RootNamespace>Fail2Ban4Win</RootNamespace>
+        <Version>0.0.4</Version>
         <Authors>Ben Hutchison</Authors>
         <Copyright>© 2026 $(Authors)</Copyright>
         <Company>$(Authors)</Company>
@@ -11,24 +12,24 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
         <PackageProjectUrl>https://github.com/Aldaviva/Fail2Ban4Win</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/Aldaviva/Fail2Ban4Win.git</RepositoryUrl>
+        <RepositoryUrl>$(PackageProjectUrl).git</RepositoryUrl>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <Description>Interfaces and other abstractions used to write plugins that extend the functionality of Fail2Ban4Win</Description>
         <PackageTags>Fail2Ban4Win plugin abstraction addin extension</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <PackageReadmeFile>Readme.md</PackageReadmeFile>
+        <PackageIcon>icon.png</PackageIcon>
         <IncludeSource>true</IncludeSource>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <RootNamespace>Fail2Ban4Win</RootNamespace>
-        <DevelopmentDependency>true</DevelopmentDependency>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="icon.png" Pack="true" PackagePath="\" />
+        <None Include="..\Readme.md;icon.png" Pack="true" PackagePath="\" />
     </ItemGroup>
     
     <ItemGroup>
