@@ -15,9 +15,9 @@
 	"eventLogSelectors": [
 		{
 			"friendlyName": "Remote Desktop Services",
-			"logName": "Security",
-			"eventId": 4625,
-			"ipAddressEventDataName": "IpAddress"
+			"logName": "Microsoft-Windows-RemoteDesktopServices-RdpCoreTS/Operational",
+			"eventId": 140,
+			"ipAddressEventDataName": "IPString"
 		}, {
 			"friendlyName": "Cygwin sshd",
 			"logName": "Application",
