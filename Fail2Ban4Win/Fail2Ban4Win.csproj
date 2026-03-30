@@ -99,7 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fail2Ban4Win.Abstractions">
-      <Version>0.0.4</Version>
+      <Version>0.0.5</Version>
     </PackageReference>
     <PackageReference Include="ILRepack.Lib.MSBuild.Task">
       <Version>2.0.44.2</Version>

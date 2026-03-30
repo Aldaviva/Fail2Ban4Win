@@ -4,9 +4,9 @@
     ".NETFramework,Version=v4.7.2": {
       "Fail2Ban4Win.Abstractions": {
         "type": "Direct",
-        "requested": "[0.0.4, )",
-        "resolved": "0.0.4",
-        "contentHash": "3XQI3voMeFTFp1yqV74PBKZjZO6lwWJGLGc7B1pgg3RMMe0k8pklFRWm+mOmh8ccd2LrSq2hP3jvFowtbn1tWg==",
+        "requested": "[0.0.5, )",
+        "resolved": "0.0.5",
+        "contentHash": "DdPrCaEClblfLGFjoncVtaai6QnKpwitzMAL37D88+ClWMonWe+Hk3s357nLQSlXVF8oUJWCAQNF14rZcUDvPw==",
         "dependencies": {
           "IPNetwork2": "[3.5.3, 4.0.0)"
         }
@@ -238,10 +238,6 @@
         "resolved": "4.6.1",
         "contentHash": "+RJT4qaekpZ7DDLhf+LTjq+E48jieKiY9ulJ+BoxKmZblIJfIJT8Ufcaa/clQqnYvWs8jugfGSMu8ylS0caG0w=="
       }
-    },
-    ".NETFramework,Version=v4.7.2/win": {},
-    ".NETFramework,Version=v4.7.2/win-arm64": {},
-    ".NETFramework,Version=v4.7.2/win-x64": {},
-    ".NETFramework,Version=v4.7.2/win-x86": {}
+    }
   }
 }

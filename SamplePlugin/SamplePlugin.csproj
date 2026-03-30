@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fail2Ban4Win.Abstractions" Version="0.0.3" ExcludeAssets="runtime" />
+        <PackageReference Include="Fail2Ban4Win.Abstractions" Version="0.0.5" ExcludeAssets="runtime" />
     </ItemGroup>
 
 </Project>
