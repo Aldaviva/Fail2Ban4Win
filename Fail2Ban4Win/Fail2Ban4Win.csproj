@@ -123,7 +123,7 @@
     </PackageReference>
     <PackageReference Include="Plugins" Version="0.0.0-beta.5" />
     <PackageReference Include="Unfucked">
-      <Version>0.0.1-beta.35</Version>
+      <Version>0.0.1-beta.37</Version>
     </PackageReference>
     <PackageReference Include="WindowsFirewallHelper">
       <Version>2.2.0.86</Version>

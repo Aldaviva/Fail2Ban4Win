@@ -72,9 +72,9 @@
       },
       "Unfucked": {
         "type": "Direct",
-        "requested": "[0.0.1-beta.35, )",
-        "resolved": "0.0.1-beta.35",
-        "contentHash": "nCHnvOKfQxgL+b1ljO6haFK0+7+h9a3T/KXWISnY6RY9r0/E7mUea5WKfPW+ucPea8Y+ZW3TVpUm2WuGEEyBQQ==",
+        "requested": "[0.0.1-beta.37, )",
+        "resolved": "0.0.1-beta.37",
+        "contentHash": "gyVcRPi+dXa32hhl1UPwL3w6/PIiRr+q/riG5BCvfgoQV/5j4+A3t4CbOKdTmVopAyVypIR+JbRbTWIKW3oUaA==",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "8.0.0",
           "System.Collections.Immutable": "8.0.0"
