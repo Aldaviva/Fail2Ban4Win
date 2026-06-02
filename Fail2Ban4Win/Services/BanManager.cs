@@ -253,7 +253,7 @@ public sealed class BanManagerImpl: BanManager {
     private static readonly Regex BAN_NAME_PATTERN = new(@"^Banned (?<subnet>[\d\./]+?)$");
 
     private static IPNetwork2? parseRuleName(string name) =>
-        BAN_NAME_PATTERN.Match(name) is { Success: true } match && IPNetwork2.TryParse(match.Groups["subnet"].Value, out IPNetwork2 subnet) ? subnet : null;
+        BAN_NAME_PATTERN.Match(name) is { Success: true } match && IPNetwork2.TryParse(match.Groups["subnet"].Value, out IPNetwork2? subnet) ? subnet : null;
 
     private static string generateRuleDescription(BanParams ban) => $"Banned {ban.Start:s}. Will unban {ban.Start + ban.Duration:s}. Offense #{ban.OffenseCount:N0}.";
 

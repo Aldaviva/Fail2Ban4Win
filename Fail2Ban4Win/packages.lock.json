@@ -4,11 +4,11 @@
     ".NETFramework,Version=v4.7.2": {
       "Fail2Ban4Win.Abstractions": {
         "type": "Direct",
-        "requested": "[0.0.5, )",
-        "resolved": "0.0.5",
-        "contentHash": "DdPrCaEClblfLGFjoncVtaai6QnKpwitzMAL37D88+ClWMonWe+Hk3s357nLQSlXVF8oUJWCAQNF14rZcUDvPw==",
+        "requested": "[0.0.6, )",
+        "resolved": "0.0.6",
+        "contentHash": "9tFp8vkXN+NOL087E+Sd9tSVTlabe47OTUf/x/SBB5iW32iGRIvVzUB7D01ymu4zLFn4jkAV1kivbjkc8qx+mw==",
         "dependencies": {
-          "IPNetwork2": "[3.5.3, 4.0.0)"
+          "IPNetwork2": "4.3.0"
         }
       },
       "ILRepack.Lib.MSBuild.Task": {
