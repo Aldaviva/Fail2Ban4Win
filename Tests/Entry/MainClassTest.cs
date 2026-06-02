@@ -37,7 +37,7 @@ public class MainClassTest: IDisposable {
             "neverBanSubnets": [
                 "127.0.0.1/8",
                 "192.168.1.0/24",
-                "67.210.32.33",
+                "204.11.166.180",
                 "73.202.12.148"
             ],
         	"eventLogSelectors": [

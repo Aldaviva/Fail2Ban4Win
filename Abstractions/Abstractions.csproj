@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Fail2Ban4Win.$(MSBuildProjectName)</AssemblyName>
         <RootNamespace>Fail2Ban4Win</RootNamespace>
-        <Version>0.0.5</Version>
+        <Version>0.0.6</Version>
         <Authors>Ben Hutchison</Authors>
         <Copyright>© 2026 $(Authors)</Copyright>
         <Company>$(Authors)</Company>
@@ -33,8 +33,8 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="IPNetwork2" Version="[3.5.3,4)" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.201" PrivateAssets="All" />
+        <PackageReference Include="IPNetwork2" Version="4.3.0" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300" PrivateAssets="All" />
     </ItemGroup>
 
     <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true' or '$(Configuration)' != 'Debug'">

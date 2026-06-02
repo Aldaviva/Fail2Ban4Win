@@ -36,7 +36,7 @@ public class ConfigurationTest: IDisposable {
             "neverBanSubnets": [
                 "127.0.0.1/8",
                 "192.168.1.0/24",
-                "67.210.32.33",
+                "204.11.166.180",
                 "73.202.12.148"
             ],
             "neverBanReservedSubnets": false,
@@ -88,7 +88,7 @@ public class ConfigurationTest: IDisposable {
         Assert.True(actual.isDryRun);
         Assert.Contains(IPNetwork2.Parse("127.0.0.1/8"), actual.neverBanSubnets!);
         Assert.Contains(IPNetwork2.Parse("192.168.1.0/24"), actual.neverBanSubnets!);
-        Assert.Contains(IPNetwork2.Parse("67.210.32.33/32"), actual.neverBanSubnets!);
+        Assert.Contains(IPNetwork2.Parse("204.11.166.180/32"), actual.neverBanSubnets!);
         Assert.Contains(IPNetwork2.Parse("73.202.12.148/32"), actual.neverBanSubnets!);
         Assert.False(actual.neverBanReservedSubnets);
         Assert.NotNull(actual.ToString());

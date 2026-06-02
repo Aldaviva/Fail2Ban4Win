@@ -196,7 +196,7 @@ public sealed class BanManagerImpl: BanManager {
         return ban;
     }
 
-    private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => Task.DelayLong(unbanDuration, cancellationTokenSource.Token)
+    private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => Task.LongDelay(unbanDuration, cancellationTokenSource.Token)
         .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled)
         .ContinueWith(result => LOGGER.Error(result.Exception, "Exception unbanning subnet {subnet}", subnet), cancellationTokenSource.Token, TaskContinuationOptions.OnlyOnFaulted);
 
@@ -262,6 +262,7 @@ public sealed class BanManagerImpl: BanManager {
     public void Dispose() {
         eventLogListener.failure -= onFailure;
         cancellationTokenSource.Cancel();
+        initialRuleDeletionDone.Dispose();
     }
 
 }

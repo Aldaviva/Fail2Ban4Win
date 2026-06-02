@@ -27,7 +27,7 @@ public class BanManagerTest: IDisposable {
 
     private const int MAX_ALLOWED_FAILURES = 2;
 
-    private static readonly IPAddress SOURCE_ADDRESS = IPAddress.Parse("192.0.2.0");
+    private static readonly IPAddress SOURCE_ADDRESS = IPAddress.Parse("1.2.3.4");
 
     private readonly BanManagerImpl                      banManager;
     private readonly EventLogListener                    eventLogListener = A.Fake<EventLogListener>();
@@ -128,11 +128,11 @@ public class BanManagerTest: IDisposable {
         firewallRules.Should().HaveCount(1);
         FirewallWASRule actual = firewallRules[0];
         actual.IsEnable.Should().BeTrue();
-        actual.Name.Should().Be("Banned 192.0.2.0/24");
+        actual.Name.Should().Be("Banned 1.2.3.0/24");
         actual.Grouping.Should().Be("Fail2Ban4Win");
         actual.Action.Should().Be(FirewallAction.Block);
         actual.Direction.Should().Be(FirewallDirection.Inbound);
-        actual.RemoteAddresses[0].Should().Be(NetworkAddress.Parse("192.0.2.0/24"));
+        actual.RemoteAddresses[0].Should().Be(NetworkAddress.Parse("1.2.3.0/24"));
     }
 
     [Fact]
@@ -144,11 +144,11 @@ public class BanManagerTest: IDisposable {
         firewallRules.Should().HaveCount(1);
         FirewallWASRule actual = firewallRules[0];
         actual.IsEnable.Should().BeTrue();
-        actual.Name.Should().Be("Banned 192.0.2.0/24");
+        actual.Name.Should().Be("Banned 1.2.3.0/24");
         actual.Grouping.Should().Be("Fail2Ban4Win");
         actual.Action.Should().Be(FirewallAction.Block);
         actual.Direction.Should().Be(FirewallDirection.Inbound);
-        actual.RemoteAddresses[0].Should().Be(NetworkAddress.Parse("192.0.2.0/24"));
+        actual.RemoteAddresses[0].Should().Be(NetworkAddress.Parse("1.2.3.0/24"));
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class BanManagerTest: IDisposable {
         configuration.banPeriod     = TimeSpan.FromDays(364);
         configuration.failureWindow = TimeSpan.FromHours(1);
 
-        IPAddress sourceAddress = IPAddress.Parse("198.51.100.1");
+        IPAddress sourceAddress = IPAddress.Parse("1.2.3.4");
         for (int i = 0; i < configuration.maxAllowedFailures + 1; i++) {
             eventLogListener.failure += Raise.With(null, new FailureParams(sourceAddress, null, "", 0, "", DateTimeOffset.UtcNow));
         }
@@ -300,7 +300,7 @@ public class BanManagerTest: IDisposable {
 
         firewallRules.Should().NotBeEmpty();
         BanParams actualBan = bans.GetLastValue();
-        actualBan.Subnet.Should().Be(IPNetwork2.Parse("192.0.2.0/24"));
+        actualBan.Subnet.Should().Be(IPNetwork2.Parse("1.2.3.0/24"));
         actualBan.Duration.Should().Be(TimeSpan.FromHours(1));
         actualBan.OffenseCount.Should().Be(1);
         actualBan.Start.Should().BeCloseTo(DateTimeOffset.Now, TimeSpan.FromSeconds(2));
@@ -323,7 +323,7 @@ public class BanManagerTest: IDisposable {
         callbackFired.Wait(TimeSpan.FromSeconds(10));
 
         BanParams actualBan = bans.GetLastValue();
-        actualBan.Subnet.Should().Be(IPNetwork2.Parse("192.0.2.0/24"));
+        actualBan.Subnet.Should().Be(IPNetwork2.Parse("1.2.3.0/24"));
         actualBan.OffenseCount.Should().Be(1);
         actualBan.Start.Should().BeCloseTo(now, TimeSpan.FromSeconds(2), "start time");
         actualBan.End.Should().BeCloseTo(now + TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), "end time");

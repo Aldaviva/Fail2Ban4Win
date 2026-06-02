@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 using Fail2Ban4Win.Config;
 using System;
@@ -31,9 +31,9 @@ public class IPNetworkDeserializerTest {
 
     [Fact]
     public void convertFromStringWithoutCidrToIPNetwork() {
-        const string INPUT = "67.210.32.33";
+        const string INPUT = "204.11.166.180";
 
-        IPNetwork2 expected = IPNetwork2.Parse("67.210.32.33", 32);
+        IPNetwork2 expected = IPNetwork2.Parse("204.11.166.180", 32);
 
         bool success = tryConvertValue(INPUT, out object? actual, out Exception? _);
 
