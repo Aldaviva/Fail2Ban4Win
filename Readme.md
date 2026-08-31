@@ -14,6 +14,7 @@ You can customize the duration of the ban, the type of Event Log events to detec
 1. [Installation](#installation)
     1. [Upgrade](#upgrade)
 1. [Configuration](#configuration)
+    1. [Properties](#properties)
     1. [Logging](#logging)
     1. [Handling a new event](#handling-a-new-event)
 1. [Running](#running)
@@ -76,21 +77,82 @@ The provided example configuration file has selectors for [Remote Desktop Servic
 > Be aware that `isDryRun` is set to `true` in the example configuration to avoid accidentally blocking traffic until you're ready.
 
 1. Open the `configuration.json` file from the Fail2Ban4Win installation directory in a text editor. (You may need to start the editor elevated depending on your file permissions.)
-1. Set any of the following properties. 
-    |Property name|Default when omitted|Description|
-    |---|---|---|
-    |`isDryRun`|`false`|Firewall rules will only be created or deleted when this is `false`.|
-    |`maxAllowedFailures`|`9`|If an IP range (of size `banSubnetBits`) exceeds this number of failures during the `failureWindow`, it will be banned. By default, the **10**<sup>th</sup> failure is a ban.|
-    |`failureWindow`|`1.00:00:00` (1 day)|How long to consider auth failures. By default, 10 failures in **1 day** results in a ban. The format is `d.hh:mm:ss`.|
-    |`banPeriod`|`1.00:00:00` (1 day)|After enough failures, the IP range will be banned by adding a Windows Firewall block rule, which will then be removed after this period of time. The format is `d.hh:mm:ss`. By default, a ban lasts **1 day**.|
-    |`banSubnetBits`|`0`|Optional CIDR subnet aggregation size when both counting failures and blocking traffic. The example value of `8` bits blocks the /24 subnet, or 255.255.255.0. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to /32.|
-    |`banRepeatedOffenseCoefficient`|`0.0`|How much of the `banPeriod` to add on subsequent offenses (optional). The default `banPeriod` of 1 day and example coefficient of 1.0 results in a 1 day ban for first offenders, 2 days for 2<sup>nd</sup> offenders, 3 days for 3<sup>rd</sup> offenders, and 4 days for 4<sup>th</sup> offenders or greater. Changing this coefficient from `1.0` to `2.0` would result in successive ban durations of 1 day, 3 days, 5 days, and 7 days instead. Defaults to all subsequent bans having the same duration as initial bans.|
-    |`banRepeatedOffenseMax`|`4`|An optional limit on how many repeated offenses can be used to calculate ban duration. By default, the 5<sup>th</sup> offense and subsequent bans will be capped at the same duration as the **4**<sup>th</sup> offense ban, which is 4 days.|
-    |`neverBanSubnets`|`[]`|Optional whitelist of IP ranges that should never be banned, regardless of how many auth failures they generate. Each item can be a single IP address, like `204.11.166.180`, or a range, like `204.11.166.0/24`.|
-    |`neverBanReservedSubnets`|`true`|By default, IP addresses in [reserved](https://github.com/lduchosal/ipnetwork/blob/4.3.0/src/System.Net.IPNetwork/IPNetwork2IANAblock.cs#L14-L30) [blocks](https://en.wikipedia.org/wiki/List_of_reserved_IP_addresses#IPv4) (such as `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16`) will not be banned, to avoid unintentionally blocking LAN access. To allow all three ranges to be banned, change this to `false`. To then selectively prevent some of those ranges from getting banned, you may add them to the `neverBanSubnets` list above. The loopback addresses 127.0.0.0/8 will never be banned, regardless of this setting.|
-    |`unbanAllOnStartup`|`true`|Whether Fail2Ban4Win should, when it launches, delete all of its existing firewall rules which it previously created. This is **`true`** by default, to fail open. To preserve existing bans, _e.g._ after a computer reboot, set this to `false`. When resuming existing unban timers, the duration is corrected for the time Fail2Ban4Win wasn't running. Unrelated firewall rules (Windows defaults, your custom rules) are never touched, regardless of this setting.|
-    |`eventLogSelectors`|`[]`|Required list of event criteria to listen for in Event Log. Each object in the list can have the following properties.<ul><li>`friendlyName`: optional label of your choice for this selector. This does not affect matching, and only appears in this program's log file when an event is matched to make it more readable.</li><li>`logName`: required, which log in Event Viewer contains the events, _e.g._ `Application`, `Security`, `OpenSSH/Operational`.</li><li>`eventId`: required, numeric ID of event logged on auth failure, _e.g._ `4625` for RDP auth errors.</li><li>`source`: optional Source, AKA Provider Name, of events, _e.g._ `sshd-session` for Cygwin OpenSSH sshd. If omitted, events will not be filtered by Source.</li><li>`ipAddressEventDataName`: optional, the `Name` of the `Data` element in the event XML's `EventData` in which to search for the client IP address of the auth request, _e.g._ `IpAddress` for RDP. If omitted, the first `Data` element will be searched instead.</li><li>`ipAddressEventDataIndex`: optional, the 0-indexed offset of the `Data` element in the XML's `EventData` in which to search for the client IP address, _e.g._ `3` to search for IP addresses in the fourth `Data` element in `EventData`. Useful if `EventData` has multiple `Data` children, but none of them have a `Name` attribute to specify in `ipAddressEventDataName`, and the IP address doesn't appear in the first one. This offset is applied after any `Name` attribute filtering, and applies whether or not `ipAddressEventDataName` is specified. If omitted, defaults to `0`.</li><li>`ipAddressPattern`: optional, regular expression pattern string that matches the IP address in the `Data` element specified above. Useful if you want to filter out some events from the log with the desired ID and source but that don't describe an auth failure (_e.g._ sshd's disconnect events). If omitted, searches for all IPv4 addresses in the `Data` element's text content. To set [options like case-insensitivity](https://docs.microsoft.com/en-us/dotnet/standard/base-types/miscellaneous-constructs-in-regular-expressions), put `(?i)` at the start of the pattern. Patterns are not anchored to the entire input string unless you surround them with `^` and `$`. If you specify a pattern, ensure the desired IPv4 capture group in your pattern has the name `ipAddress`, _e.g._ <pre lang="regex">Failed: (?&lt;ipAddress&gt;(?:\d{1,3}\\.){3}\d{1,3})</pre></li><li>`eventPredicate`: optional, XPath 1.0 query fragment to filter events based on arbitrary elements, matched against the `<Event>` element. Useful if not all events with the given `logName`, `eventId`, and `source` should trigger bans, like IIS HTTP 200 responses, _e.g._ `[EventData/Data[@Name='sc-status']=403]`. Most XPath functions are not supported by Windows ETW.</li></ul>See [Handling a new event](#handling-a-new-event) below for a tutorial on creating this object.|
+1. Set any of the [configuration properties](#properties) below.
 1. After saving the configuration file, restart the Fail2Ban4Win service using `services.msc` (GUI), `Restart-Service Fail2Ban4Win` (PowerShell), or `net stop Fail2Ban4Win & net start Fail2Ban4Win` (Command Prompt) for your changes to take effect. Note that the service will clear existing bans when it starts (unless you changed `unbanAllOnStartup` to `false`).
+
+### Properties
+
+
+#### `isDryRun`
+_default: `false`_
+
+Firewall rules will only be created or deleted when this is `false`.
+
+#### `maxAllowedFailures`
+_default: `9`_
+
+If an IP range (of size `banSubnetBits`) exceeds this number of failures during the `failureWindow`, it will be banned. By default, the **10**<sup>th</sup> failure is a ban.
+
+#### `failureWindow`
+_default: `1.00:00:00` (1 day)_
+
+How long to consider auth failures. By default, 10 failures in **1 day** results in a ban. The format is `d.hh:mm:ss`.
+
+#### `banPeriod`
+_default: `1.00:00:00` (1 day)_
+
+After enough failures, the IP range will be banned by adding a Windows Firewall block rule, which will then be removed after this period of time. By default, a ban lasts **1 day**. The format is `d.hh:mm:ss`.
+
+#### `banSubnetBits`
+_default: `0`_
+
+Optional IPv4 CIDR subnet aggregation size when both counting failures and blocking traffic. The example value of `8` bits blocks the /24 subnet, or 255.255.255.0. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to /32.
+
+#### `banSubnetBits.ipv6`
+_default: `0`_
+
+The same as [`banSubnetBits`](#bansubnetbits) except for IPv6 instead of IPv4. The example value of `80` bits blocks the /48 subnet, which comprises all addresses with the same default-sized routing prefix. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to /128.
+
+#### `banRepeatedOffenseCoefficient`
+_default: `0.0`_
+
+How much of the `banPeriod` to add on subsequent offenses (optional). The default `banPeriod` of 1 day and example coefficient of 1.0 results in a 1 day ban for first offenders, 2 days for 2<sup>nd</sup> offenders, 3 days for 3<sup>rd</sup> offenders, and 4 days for 4<sup>th</sup> offenders or greater. Changing this coefficient from `1.0` to `2.0` would result in successive ban durations of 1 day, 3 days, 5 days, and 7 days instead. Defaults to all subsequent bans having the same duration as initial bans.
+
+#### `banRepeatedOffenseMax`
+_default: `4`_
+
+An optional limit on how many repeated offenses can be used to calculate ban duration. By default, the 5<sup>th</sup> offense and subsequent bans will be capped at the same duration as the **4**<sup>th</sup> offense ban, which is 4 days.
+
+#### `neverBanSubnets`
+_default: `[]`_
+
+Optional whitelist of IP ranges that should never be banned, regardless of how many auth failures they generate. Each item can be a single IP address, like `204.11.166.180`, or a range, like `204.11.166.0/24`.
+
+#### `neverBanReservedSubnets`
+_default: `true`_
+
+By default, IP addresses in [reserved](https://github.com/lduchosal/ipnetwork/blob/4.3.0/src/System.Net.IPNetwork/IPNetwork2IANAblock.cs#L14-L30) [blocks](https://en.wikipedia.org/wiki/List_of_reserved_IP_addresses#IPv4) (such as `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16`) and unique local addresses will not be banned, to avoid unintentionally blocking LAN access. To allow all of these ranges to be banned, change this to `false`. To then selectively prevent some of those ranges from getting banned, you may add them to the `neverBanSubnets` list above. The loopback addresses 127.0.0.0/8 and ::1/128 will never be banned, regardless of this setting.
+
+#### `unbanAllOnStartup`
+_default: `true`_
+
+Whether Fail2Ban4Win should, when it launches, delete all of its existing firewall rules which it previously created. This is **`true`** by default, to fail open. To preserve existing bans, _e.g._ after a computer reboot, set this to `false`. When resuming existing unban timers, the duration is corrected for the time Fail2Ban4Win wasn't running. Unrelated firewall rules (Windows defaults, your custom rules) are never touched, regardless of this setting.
+
+#### `eventLogSelectors`
+_default: `[]`_
+
+Required list of event criteria to listen for in Event Log. Each object in the list can have the following properties.
+
+- `friendlyName`: optional label of your choice for this selector. This does not affect matching, and only appears in this program's log file when an event is matched to make it more readable.
+- `logName`: required, which log in Event Viewer contains the events, _e.g._ `Application`, `Security`, `OpenSSH/Operational`.
+- `eventId`: required, numeric ID of event logged on auth failure, _e.g._ `4625` for RDP auth errors.
+- `source`: optional Source, AKA Provider Name, of events, _e.g._ `sshd-session` for Cygwin OpenSSH sshd. If omitted, events will not be filtered by Source.
+- `ipAddressEventDataName`: optional, the `Name` of the `Data` element in the event XML's `EventData` in which to search for the client IP address of the auth request, _e.g._ `IpAddress` for RDP. If omitted, the first `Data` element will be searched instead.
+- `ipAddressEventDataIndex`: optional, the 0-indexed offset of the `Data` element in the XML's `EventData` in which to search for the client IP address, _e.g._ `3` to search for IP addresses in the fourth `Data` element in `EventData`. Useful if `EventData` has multiple `Data` children, but none of them have a `Name` attribute to specify in `ipAddressEventDataName`, and the IP address doesn't appear in the first one. This offset is applied after any `Name` attribute filtering, and applies whether or not `ipAddressEventDataName` is specified. If omitted, defaults to `0`.
+- `ipAddressPattern`: optional, regular expression pattern string that matches the IP address in the `Data` element specified above. Useful if you want to filter out some events from the log with the desired ID and source but that don't describe an auth failure (_e.g._ sshd's disconnect events). If omitted, searches for all IP addresses in the `Data` element's text content. To set [options like case-insensitivity](https://docs.microsoft.com/en-us/dotnet/standard/base-types/miscellaneous-constructs-in-regular-expressions), put `(?i)` at the start of the pattern. Patterns are not anchored to the entire input string unless you surround them with `^` and `$`. If you specify a pattern, ensure the desired IP capture group in your pattern has the name `ipAddress`, _e.g._ <pre lang="regex">Failed: (?&lt;ipAddress&gt;(?:\d{1,3}\\.){3}\d{1,3}\|(?:[\\da-fA-F]{0,4}:){2,7}[\\da-fA-F]{0,4})</pre>
+- `eventPredicate`: optional, XPath 1.0 query fragment to filter events based on arbitrary elements, matched against the `<Event>` element. Useful if not all events with the given `logName`, `eventId`, and `source` should trigger bans, like IIS HTTP 200 responses, _e.g._ `[EventData/Data[@Name='sc-status']=403]`. Most XPath functions are not supported by Windows ETW.
+
+See [Handling a new event](#handling-a-new-event) below for a tutorial on creating this object.
 
 ### Logging
 Fail2Ban4Win uses [NLog](https://nlog-project.org) to log messages. By default, messages of Info severity and above are written to `logs\Fail2Ban4Win.log` in the installation directory.

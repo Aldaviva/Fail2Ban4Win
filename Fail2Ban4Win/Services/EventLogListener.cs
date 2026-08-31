@@ -20,7 +20,8 @@ public sealed class EventLogListenerImpl: EventLogListener {
 
     private static readonly Logger LOGGER = LogManager.GetLogger(typeof(EventLogListenerImpl).FullName!);
 
-    private static readonly Regex DEFAULT_IPV4_ADDRESS_PATTERN = new(@"(?<ipAddress>\b(?:(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\.){3}(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\b)",
+    private static readonly Regex DEFAULT_IP_ADDRESS_PATTERN = new(
+        @"(?<ipAddress>(?<!\d)(?:(?:(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\.){3}(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2})))(?!\d)|(?<![\da-fA-F:])(?:(?:[\da-fA-F]{0,4}:){2,7}[\da-fA-F]{0,4})(?![\da-fA-F:]))",
         RegexOptions.None, RegexDeserializer.MATCH_TIMEOUT);
 
     public event EventHandler<FailureParams>? failure;
@@ -32,7 +33,7 @@ public sealed class EventLogListenerImpl: EventLogListener {
             if (!selector.ipAddressPattern?.GetGroupNames().Contains("ipAddress") ?? false) {
                 throw new ArgumentException($"Event log selector for event {selector.eventId} in log {selector.logName} contains an ipAddressPattern ({selector.ipAddressPattern}), " +
                     "but the pattern does not contain a named capturing group with the name \"ipAddress\"." +
-                    "Ensure the pattern contains a group that looks like \"(?<ipAddress>(?:\\d{{1,3}}\\.){{3}}\\d{{1,3}})\" or similar.");
+                    "Ensure the pattern contains a group that looks like \"(?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}|(?:[\\da-fA-F]{0,4}:){2,7}[\\da-fA-F]{0,4})\" or similar.");
             }
 
             EventLogWatcherFacade watcher = eventLogWatcherFacadeFactory(new EventLogQueryFacade(selector.logName, PathType.LogName, selectorToQuery(selector)));
@@ -71,9 +72,9 @@ public sealed class EventLogListenerImpl: EventLogListener {
                 .ElementAtOrDefault(selector.ipAddressEventDataIndex) as string;
 
         if (stringContainingIpAddress is not null) {
-            LOGGER.Trace("Searching for IPv4 address in {str}", stringContainingIpAddress);
+            LOGGER.Trace("Searching for IP address in {str}", stringContainingIpAddress);
             try {
-                MatchCollection matchCollection = (selector.ipAddressPattern ?? DEFAULT_IPV4_ADDRESS_PATTERN).Matches(stringContainingIpAddress);
+                MatchCollection matchCollection = (selector.ipAddressPattern ?? DEFAULT_IP_ADDRESS_PATTERN).Matches(stringContainingIpAddress);
 
                 if (matchCollection.Count > 0) {
                     IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>().Select(match => IPAddress.Parse(match.Groups["ipAddress"].Value));
