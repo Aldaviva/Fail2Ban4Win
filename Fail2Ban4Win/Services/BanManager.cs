@@ -21,18 +21,17 @@ public interface BanManager: IDisposable;
 
 public sealed class BanManagerImpl: BanManager {
 
-    private static readonly Logger LOGGER = LogManager.GetLogger(nameof(BanManagerImpl));
+    private static readonly Logger LOGGER = LogManager.GetLogger(typeof(BanManagerImpl).FullName!);
 
     private const FirewallProfiles ALL_PROFILES = FirewallProfiles.Domain | FirewallProfiles.Private | FirewallProfiles.Public;
     private const string           GROUP_NAME   = "Fail2Ban4Win";
-
-    private static readonly IPNetwork2 LOOPBACK = IPNetwork2.Parse(IPAddress.Loopback, IPNetwork2.ToNetmask(8, AddressFamily.InterNetwork));
 
     private readonly EventLogListener                    eventLogListener;
     private readonly Configuration                       configuration;
     private readonly FirewallFacade                      firewall;
     private readonly IPluginManager<IFail2Ban4WinPlugin> pluginManager;
     private readonly IPAddress                           subnetMask;
+    private readonly IPAddress                           subnetMaskIpv6;
 
     private readonly ConcurrentDictionary<IPNetwork2, SubnetFailureHistory> failures                = new();
     private readonly CancellationTokenSource                                cancellationTokenSource = new();
@@ -44,7 +43,8 @@ public sealed class BanManagerImpl: BanManager {
         this.firewall         = firewall;
         this.pluginManager    = pluginManager;
 
-        subnetMask = IPNetwork2.ToNetmask((byte) (32 - (this.configuration.banSubnetBits ?? 0)), AddressFamily.InterNetwork);
+        subnetMask     = IPNetwork2.ToNetmask((byte) (32 - (this.configuration.banSubnetBits ?? 0)), AddressFamily.InterNetwork);
+        subnetMaskIpv6 = IPNetwork2.ToNetmask((byte) (128 - (this.configuration.banSubnetBitsIpv6 ?? 0)), AddressFamily.InterNetworkV6);
 
         eventLogListener.failure += onFailure;
 
@@ -110,7 +110,7 @@ public sealed class BanManagerImpl: BanManager {
             plugin.OnAuthFailureDetected(failure);
         }
 
-        IPNetwork2           subnet            = IPNetwork2.Parse(failure.Sender, subnetMask);
+        IPNetwork2           subnet            = IPNetwork2.Parse(failure.Sender, failure.Sender.AddressFamily == AddressFamily.InterNetworkV6 ? subnetMaskIpv6 : subnetMask);
         SubnetFailureHistory failuresForSubnet = failures.GetOrAdd(subnet, _ => new ArrayListSubnetFailureHistory(configuration.maxAllowedFailures));
         BanParams?           ban               = null;
 
@@ -131,13 +131,13 @@ public sealed class BanManagerImpl: BanManager {
 
     // this runs inside a lock on the SubnetFailureHistory
     private bool shouldBan(IPNetwork2 subnet, SubnetFailureHistory clientFailureHistory) {
-        if (subnet.IsIANAReserved() && configuration.neverBanReservedSubnets) {
+        if ((subnet.IsIANAReserved() || subnet.IsUla()) && configuration.neverBanReservedSubnets) {
             LOGGER.Debug("Not banning {subnet} because it is contained in an IANA-reserved block such as {reserved1}. To ban anyway, set {config} to false.", subnet, IPNetwork2.IANA_CBLK_RESERVED1,
                 nameof(configuration.neverBanReservedSubnets));
             return false;
         }
 
-        if (LOOPBACK.Contains(subnet)) {
+        if (subnet.AddressFamily == AddressFamily.InterNetworkV6 ? IPNetwork2.IANA6_LOOPBACK.Contains(subnet) : IPNetwork2.IANA_LOOPBACK.Contains(subnet)) {
             LOGGER.Debug("Not banning {subnet} because it is a loopback address", subnet);
             return false;
         }

@@ -25,33 +25,35 @@ public class ConfigurationTest: IDisposable {
         File.Move("configuration.json", "configuration.json.backup");
     }
 
-    private const string JSON = """
+    private const string JSON = /* lang=json */ """
         {
-        	"maxAllowedFailures": 9,
-        	"failureWindow": "1.00:00:00",
-        	"banPeriod": "1.00:00:00",
+            "maxAllowedFailures": 9,
+            "failureWindow": "1.00:00:00",
+            "banPeriod": "1.00:00:00",
             "banSubnetBits": 24,
+            "banSubnetBits.ipv6": 80,
             "banRepeatedOffenseCoefficient": 1.5,
             "banRepeatedOffenseMax": 4,
             "neverBanSubnets": [
                 "127.0.0.1/8",
                 "192.168.1.0/24",
                 "204.11.166.180",
-                "73.202.12.148"
+                "73.202.12.148",
+                "2001:db8::1"
             ],
             "neverBanReservedSubnets": false,
-        	"eventLogSelectors": [
-        		{
-        		    "friendlyName": "RDP",
-        			"logName": "Security",
-        			"eventId": 4625,
-        			"ipAddressEventDataName": "IpAddress"
-        		}, {
-        			"logName": "Application",
-        			"source": "sshd",
-        			"eventId": 0,
-        			"ipAddressPattern": "^sshd: PID \\d+: Failed password for(?: invalid user)? \\S+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d+ ssh\\d?$"
-        		}, {
+            "eventLogSelectors": [
+                {
+                    "friendlyName": "RDP",
+                    "logName": "Security",
+                    "eventId": 4625,
+                    "ipAddressEventDataName": "IpAddress"
+                }, {
+                    "logName": "Application",
+                    "source": "sshd",
+                    "eventId": 0,
+                    "ipAddressPattern": "^sshd: PID \\d+: Failed password for(?: invalid user)? \\S+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}) port \\d+ ssh\\d?$"
+                }, {
                     "logName": "Application",
                     "source": "MSExchangeFrontEndTransport",
                     "eventId": 1035,
@@ -63,7 +65,7 @@ public class ConfigurationTest: IDisposable {
                     "ipAddressEventDataName": "c-ip",
                     "eventPredicate": "[EventData/Data[@Name='sc-status']=403]"
                 }
-        	],
+            ],
             "isDryRun": true
         }
         """;
@@ -83,6 +85,7 @@ public class ConfigurationTest: IDisposable {
         Assert.Equal(TimeSpan.FromDays(1), actual.failureWindow);
         Assert.Equal(TimeSpan.FromDays(1), actual.banPeriod);
         Assert.Equal(24, actual.banSubnetBits!.Value);
+        Assert.Equal(80, actual.banSubnetBitsIpv6!.Value);
         Assert.Equal(1.5, actual.banRepeatedOffenseCoefficient!.Value);
         Assert.Equal(4, actual.banRepeatedOffenseMax!.Value);
         Assert.True(actual.isDryRun);
@@ -90,6 +93,7 @@ public class ConfigurationTest: IDisposable {
         Assert.Contains(IPNetwork2.Parse("192.168.1.0/24"), actual.neverBanSubnets!);
         Assert.Contains(IPNetwork2.Parse("204.11.166.180/32"), actual.neverBanSubnets!);
         Assert.Contains(IPNetwork2.Parse("73.202.12.148/32"), actual.neverBanSubnets!);
+        Assert.Contains(IPNetwork2.Parse("2001:db8::1/128"), actual.neverBanSubnets!);
         Assert.False(actual.neverBanReservedSubnets);
         Assert.NotNull(actual.ToString());
 

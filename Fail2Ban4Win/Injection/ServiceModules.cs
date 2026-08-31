@@ -13,7 +13,7 @@ public class ServiceModules: ICompositionRoot {
         serviceRegistry.Register<BanManager, BanManagerImpl>(new PerScopeLifetime());
         serviceRegistry.Register<EventLogListener, EventLogListenerImpl>(new PerScopeLifetime());
         serviceRegistry.Register<IPluginManager<IFail2Ban4WinPlugin>>(_ => {
-            var pluginManager = new PluginManager<IFail2Ban4WinPlugin>("plugins");
+            var pluginManager = new PluginManager<IFail2Ban4WinPlugin>("plugins", true);
             pluginManager.LoadAll();
             return pluginManager;
         }, new PerScopeLifetime());

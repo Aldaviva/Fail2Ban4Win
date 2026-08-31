@@ -4,6 +4,7 @@ using Fail2Ban4Win.Config;
 using System;
 using System.ComponentModel;
 using System.Net;
+using System.Net.Sockets;
 using Xunit;
 
 namespace Tests.Config;
@@ -26,6 +27,7 @@ public class IPNetworkDeserializerTest {
         Assert.NotNull(actual);
         Assert.IsType<IPNetwork2>(actual);
         Assert.Equal(expected, actual);
+        Assert.Equal(AddressFamily.InterNetwork, expected.AddressFamily);
         Assert.Null(error);
     }
 
@@ -39,6 +41,33 @@ public class IPNetworkDeserializerTest {
 
         Assert.True(success);
         Assert.Equal(expected, actual);
+        Assert.Equal(AddressFamily.InterNetwork, expected.AddressFamily);
+    }
+
+    [Fact]
+    public void convertFromStringWithCidrToIPv6Network() {
+        const string INPUT = "2001:db8::1/64";
+
+        IPNetwork2 expected = IPNetwork2.Parse("2001:db8::1", 64);
+
+        bool success = tryConvertValue(INPUT, out object? actual, out Exception? error);
+
+        Assert.True(success);
+        Assert.Equal(expected, actual);
+        Assert.Equal(AddressFamily.InterNetworkV6, expected.AddressFamily);
+    }
+
+    [Fact]
+    public void convertFromStringWithoutCidrToIPv6Network() {
+        const string INPUT = "2001:db8::1";
+
+        IPNetwork2 expected = IPNetwork2.Parse("2001:db8::1", 128);
+
+        bool success = tryConvertValue(INPUT, out object? actual, out Exception? _);
+
+        Assert.True(success);
+        Assert.Equal(expected, actual);
+        Assert.Equal(AddressFamily.InterNetworkV6, expected.AddressFamily);
     }
 
     /// <summary>From <c>Microsoft.Extensions.Configuration.ConfigurationBinder.TryConvertValue</c></summary>
