@@ -27,11 +27,17 @@
 			"eventId": 140,
 			"ipAddressEventDataName": "IPString"
 		}, {
-			"friendlyName": "OpenSSH sshd",
+			"friendlyName": "OpenSSH sshd password",
 			"logName": "OpenSSH/Operational",
 			"eventId": 4,
 			"ipAddressEventDataName": "payload",
 			"ipAddressPattern": "^(?:sshd: )?Failed password for(?: invalid user)? .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}|(?:[\\da-fA-F]{0,4}:){2,7}[\\da-fA-F]{0,4}) port \\d{1,5} ssh\\d?$"
+		}, {
+			"friendlyName": "OpenSSH sshd username",
+			"logName": "OpenSSH/Operational",
+			"eventId": 4,
+			"ipAddressEventDataName": "payload",
+			"ipAddressPattern": "^(?:sshd: )?Invalid user .+ from (?<ipAddress>(?:\\d{1,3}\\.){3}\\d{1,3}|(?:[\\da-fA-F]{0,4}:){2,7}[\\da-fA-F]{0,4}) port \\d{1,5}$"
 		}, {
 			"friendlyName": "Cygwin sshd",
 			"logName": "Application",
