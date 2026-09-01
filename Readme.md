@@ -19,8 +19,8 @@ You can customize the duration of the ban, the type of Event Log events to detec
     1. [Handling a new event](#handling-a-new-event)
 1. [Running](#running)
 1. [Monitoring](#monitoring)
-    1. [GUI](#gui)
-    1. [PowerShell](#powershell)
+    1. [Rules](#rules)
+    1. [Logs](#logs)
 1. [Extensibility](#extensibility)
 1. [Uninstallation](#uninstallation)
 1. [Acknowledgments](#acknowledgments)
@@ -28,7 +28,6 @@ You can customize the duration of the ban, the type of Event Log events to detec
 <!-- /MarkdownTOC -->
 
 ## Behavior
-
 1. Fail2Ban4Win runs in the background as a Windows Service.
 1. Configuration comes from a JSON file in the installation directory.
 1. Fail2Ban4Win listens for Windows Event Log events from various logs and event IDs.
@@ -82,7 +81,6 @@ The provided example configuration file has selectors for [Remote Desktop Servic
 
 ### Properties
 
-
 #### `isDryRun`
 _default: `false`_
 
@@ -106,12 +104,12 @@ After enough failures, the IP range will be banned by adding a Windows Firewall 
 #### `banSubnetBits`
 _default: `0` (/32)
 
-Optional IPv4 CIDR subnet aggregation size when both counting failures and blocking traffic. This is the number of bits inside the subnet, so the example value of `8` bits blocks the /24 subnet, or 255.255.255.0. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to /32. For the IPv6 equivalent, see [`banSubnetBits.ipv6`](#bandsubnetbitsipv6).
+Optional IPv4 CIDR subnet aggregation size when both counting failures and blocking traffic. This is the number of host identifier bits inside the subnet, so the example value of `8` bits blocks the /24 subnet, or 255.255.255.0. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to a /32 subnet. For the IPv6 equivalent, see [`banSubnetBits.ipv6`](#bandsubnetbitsipv6).
 
 #### `banSubnetBits.ipv6`
 _default: `0` (/128)_
 
-The same as [`banSubnetBits`](#bansubnetbits) except for IPv6 instead of IPv4. This is the number of bits inside the subnet, so the example value of `80` bits blocks the /48 subnet, which comprises all addresses with the same default-sized 48-bit routing prefix. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to /128.
+The same as [`banSubnetBits`](#bansubnetbits) except for IPv6 instead of IPv4. This is the number of host identifier bits inside the subnet, so the example value of `72` bits blocks the /56 subnet. You can restrict blocking only to the exact IP address by setting this to **`0`**, which is equivalent to a /128 subnet.
 
 #### `banRepeatedOffenseCoefficient`
 _default: `0.0`_
@@ -234,9 +232,11 @@ Do any of the following.
 - Run the service in the foreground by starting `Fail2Ban4Win.exe` in a console window. This is useful for looking at the log output and verifying your configuration, especially when `isDryRun` is true. You can stop the process using <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 
 ## Monitoring
+
+### Rules
 You can see the block rules created by Fail2Ban4Win in Windows Firewall.
 
-### GUI
+#### GUI
 1. Start Windows Firewall with Advanced Security (`wf.msc`).
 1. Go to `Inbound Rules`.
 1. To only show rules created by Fail2Ban4Win, select Action › Filter by Group › Filter by Fail2Ban4Win.
@@ -245,7 +245,7 @@ You can see the block rules created by Fail2Ban4Win in Windows Firewall.
 
 ![Windows Firewall with Advanced Security filtering by Fail2Ban4Win rules](https://i.imgur.com/pW12vKL.png)
 
-### PowerShell
+#### PowerShell
 ```ps1
 Get-NetFirewallRule -DisplayGroup Fail2Ban4Win | ft DisplayName, Description
 ```
@@ -258,17 +258,24 @@ Banned 102.67.139.0/24  Banned 2025-09-23T00:52:14. Will unban 2025-10-14T00:52:
 ```
 *See [`Get-NetFirewallRule` documentation](https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallrule).*
 
+### Logs
+You can watch the [log file](#logging) while the program is running.
+
+```ps1
+Get-Content "C:\Program Files (x86)\Fail2Ban4Win\logs\Fail2Ban4Win.log" -Wait -Tail 10
+```
+
 ## Extensibility
 If you want this program to execute custom logic when an IP address fails to authenticate or a subnet is banned or unbanned, such as sending you a notification, you can [write a plugin](https://github.com/Aldaviva/Fail2Ban4Win/wiki/Plugin-Authoring). These plugins take the form of .NET DLLs in the `plugins` subdirectory of the Fail2Ban4Win installation directory.
 
 ## Uninstallation
-
 You can [uninstall Fail2Ban4Win and its rules](https://github.com/Aldaviva/Fail2Ban4Win/wiki/Uninstallation) from a computer.
 
 ## Acknowledgments
 - My parents for free Windows Server hosting with a static IP address for anyone to connect to.
+- [Robert Mustacchi (`rmustacc`)](https://github.com/rmustacc) for talking me out of trying to implement a wait-free list to store failure times and instead continuing to lock array lists.
+- [Soroush (`falahati`)](https://github.com/falahati/WindowsFirewallHelper) for the excellent .NET wrapper for the Windows Firewall COM API.
+- [Luc Dvchosal (`lduchosal`)](https://github.com/lduchosal/ipnetwork) for the excellent .NET IP subnet calculator.
 - A vague awareness of the existence of [`fail2ban`](https://www.fail2ban.org) that convinced me that non-stop RDP and SSH login attempts might have a solution.
 - [`wail2ban` by Katie McLaughlin (`glasnt`)](https://github.com/glasnt/wail2ban) for being archived and motivating me to create my own non-archived implementation.
-- [`win2ban`](https://itefix.net/win2ban) for charging an entire fourty-nine American dollars for some cobbled together free open-source projects, which made me indignant enough to create my own free, open-source, clean-room implementation.
-- [Soroush (`falahati`)](https://github.com/falahati/WindowsFirewallHelper) for the excellent .NET wrapper for the Windows Firewall COM API.
-- [Robert Mustacchi (`rmustacc`)](https://github.com/rmustacc) for talking me out of trying to implement a wait-free list to store failure times and instead continuing to lock array lists.
+- [`win2ban` by `tevkar`](https://itefix.net/win2ban) for charging an entire fourty-nine American dollars for some cobbled together free open-source projects, which made me indignant enough to create my own free, open-source, clean-room implementation. The maintainer also whined about this and tried to weasel out of being recognized as a leech on the free software community.

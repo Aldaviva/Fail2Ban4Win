@@ -61,8 +61,8 @@ public sealed class BanManagerImpl: BanManager {
             IEnumerable<FirewallWASRule> oldRules = firewall.Rules.Where(isBanRule()).ToList();
             if (oldRules.Any()) {
                 if (configuration.unbanAllOnStartup) {
-                    LOGGER.Info("Deleting {count} existing rules from Windows Firewall because Fail2Ban4Win restarted. To preserve them, set {config} to false in {file}.", oldRules.Count(),
-                        nameof(Configuration.unbanAllOnStartup), ConfigurationModule.FILENAME);
+                    LOGGER.Info("Deleting {count} existing rules from Windows Firewall because {program} restarted. To preserve them, set {config} to false in {file}.", oldRules.Count(),
+                        nameof(Fail2Ban4Win), nameof(Configuration.unbanAllOnStartup), ConfigurationModule.FILENAME);
                     foreach (FirewallWASRule oldRule in oldRules) {
                         if (!configuration.isDryRun) {
                             firewall.Rules.Remove(oldRule);
@@ -77,11 +77,12 @@ public sealed class BanManagerImpl: BanManager {
                             if (remainingBanDuration > TimeSpan.Zero) {
                                 scheduleUnban(ban.Subnet, remainingBanDuration);
                                 scheduledUnbans++;
-                                LOGGER.Debug("Resumed timer after Fail2Ban4Win restarted to unban {subnet} at the original time of {time:O} (in {duration:g})", ban.Subnet, ban.End,
+                                LOGGER.Debug("Resumed timer after {program} restarted to unban {subnet} at the original time of {time:O} (in {duration:g})", nameof(Fail2Ban4Win), ban.Subnet, ban.End,
                                     remainingBanDuration);
                             } else {
                                 if (!configuration.isDryRun) {
-                                    LOGGER.Info("Ban already expired on subnet {subnet} while Fail2Ban4Win wasn't running, removing firewall rule {name} now", ban.Start, oldRule.Name);
+                                    LOGGER.Info("Ban already expired on subnet {subnet} while {program} wasn't running, removing firewall rule {name} now", ban.Start, nameof(Fail2Ban4Win),
+                                        oldRule.Name);
                                     firewall.Rules.Remove(oldRule);
                                 }
 
@@ -95,7 +96,7 @@ public sealed class BanManagerImpl: BanManager {
                             firewall.Rules.Remove(oldRule);
                         }
                     }
-                    LOGGER.Info("Resumed {count:N0} timers to unban subnets after Fail2Ban4Win restarted", scheduledUnbans);
+                    LOGGER.Info("Resumed {count:N0} timers to unban subnets after {program} restarted", scheduledUnbans, nameof(Fail2Ban4Win));
                 }
             }
 
@@ -190,7 +191,7 @@ public sealed class BanManagerImpl: BanManager {
             clientFailureHistory.clearFailures();
         } else {
             LOGGER.Info("Would have added Windows Firewall rule to block inbound traffic from {subnet}, but dry run mode is enabled, so skipping adding rule. " +
-                "To actually add firewall rules, set {config} to false in {file} and restart Fail2Ban4Win.", subnet, nameof(Configuration.isDryRun), ConfigurationModule.FILENAME);
+                "To actually add firewall rules, set {config} to false in {file} and restart {program}.", subnet, nameof(Configuration.isDryRun), ConfigurationModule.FILENAME, nameof(Fail2Ban4Win));
         }
 
         return ban;

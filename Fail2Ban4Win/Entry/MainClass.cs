@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
 
@@ -13,6 +14,10 @@ public static class MainClass {
 
     public static void Main(string[] args) {
         service = new WindowsService();
+
+        Logger logger = LogManager.GetLogger(typeof(MainClass).FullName);
+        logger.Info("Starting {program} {version}", nameof(Fail2Ban4Win), Assembly.GetEntryAssembly()!.GetName().Version.ToString(3, 4));
+
         if (isBackgroundService) {
             ServiceBase.Run(service);
         } else {

@@ -57,7 +57,7 @@ public sealed class EventLogListenerImpl: EventLogListener {
                 return null;
             }
 
-            LOGGER.Info("Listening for Event Log records from the {log} log with event ID {id} and {source}", selector.logName, selector.eventId,
+            LOGGER.Info("Selector {selector} is listening for Event Log records from the {log} log with event ID {id} and {source}", selector.friendlyName, selector.logName, selector.eventId,
                 selector.source is not null ? "source " + selector.source : "any source");
             return watcher;
         }).Compact().ToList();
@@ -73,27 +73,36 @@ public sealed class EventLogListenerImpl: EventLogListener {
 
         if (stringContainingIpAddress is not null) {
             LOGGER.Trace("Searching for IP address in {str}", stringContainingIpAddress);
-            try {
-                MatchCollection matchCollection = (selector.ipAddressPattern ?? DEFAULT_IP_ADDRESS_PATTERN).Matches(stringContainingIpAddress);
+            if (selector.ipAddressPattern is null && IPAddress.TryParse(stringContainingIpAddress, out IPAddress address)) {
+                onFailingAddressDetected(address, record, selector);
+            } else {
+                try {
+                    MatchCollection matchCollection = (selector.ipAddressPattern ?? DEFAULT_IP_ADDRESS_PATTERN).Matches(stringContainingIpAddress);
 
-                if (matchCollection.Count > 0) {
-                    IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>().Select(match => IPAddress.Parse(match.Groups["ipAddress"].Value));
+                    if (matchCollection.Count != 0) {
+                        IEnumerable<IPAddress> failingIpAddresses = matchCollection.Cast<Match>()
+                            .Select(match => IPAddress.TryParse(match.Groups["ipAddress"].Value, out IPAddress address2) ? address2 : null).Compact();
 
-                    foreach (IPAddress failingIpAddress in failingIpAddresses) {
-                        FailureParams failureParams = new(failingIpAddress, selector.friendlyName, record.LogName, record.Id, record.ProviderName,
-                            record.TimeCreated is {} timeCreated ? new DateTimeOffset(timeCreated) : DateTimeOffset.UtcNow);
-
-                        LOGGER.Info("Authentication failure detected from {addr} (selector={selector}, log={log}, event={id}, source={source})", failureParams.Sender,
-                            failureParams.SelectorFriendlyName ?? string.Empty, failureParams.Log, failureParams.EventId, failureParams.Source);
-
-                        failure?.Invoke(this, failureParams);
+                        foreach (IPAddress failingIpAddress in failingIpAddresses) {
+                            onFailingAddressDetected(failingIpAddress, record, selector);
+                        }
                     }
+                } catch (RegexMatchTimeoutException) {
+                    LOGGER.Warn("Searching for IP address in event {recordId} with ID {id} from {source} source of {log} log took more than {timeout:g}, ignoring this event.",
+                        record.RecordId, record.Id, record.ProviderName, record.LogName, RegexDeserializer.MATCH_TIMEOUT);
                 }
-            } catch (RegexMatchTimeoutException) {
-                LOGGER.Warn("Searching for IP address in event {recordId} with ID {id} from {source} source of {log} log took more than {timeout:g}, ignoring this event.",
-                    record.RecordId, record.Id, record.ProviderName, record.LogName, RegexDeserializer.MATCH_TIMEOUT);
             }
         }
+    }
+
+    private void onFailingAddressDetected(IPAddress failingIpAddress, EventLogRecordFacade record, EventLogSelector selector) {
+        FailureParams failureParams = new(failingIpAddress, selector.friendlyName, record.LogName, record.Id, record.ProviderName,
+            record.TimeCreated is {} timeCreated ? new DateTimeOffset(timeCreated) : DateTimeOffset.UtcNow);
+
+        LOGGER.Info("Authentication failure detected from {addr} (selector={selector}, log={log}, event={id}, source={source})", failureParams.Sender,
+            failureParams.SelectorFriendlyName ?? string.Empty, failureParams.Log, failureParams.EventId, failureParams.Source);
+
+        failure?.Invoke(this, failureParams);
     }
 
     /// <summary>https://docs.microsoft.com/en-us/previous-versions/bb399427(v=vs.90)</summary>
