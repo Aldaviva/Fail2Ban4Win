@@ -18,7 +18,7 @@ public interface EventLogListener: IDisposable {
 
 public sealed class EventLogListenerImpl: EventLogListener {
 
-    private static readonly Logger LOGGER = LogManager.GetLogger(typeof(EventLogListenerImpl).FullName!);
+    private static readonly Logger LOGGER = LogManager.GetLogger(typeof(EventLogListenerImpl).FullName);
 
     private static readonly Regex DEFAULT_IP_ADDRESS_PATTERN = new(
         @"(?<ipAddress>(?<!\d)(?:(?:(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2}))\.){3}(?:(?:25[0-5])|(?:2[0-4]\d)|(?:[01]?\d{1,2})))(?!\d)|(?<![\da-fA-F:])(?:(?:[\da-fA-F]{0,4}:){2,7}[\da-fA-F]{0,4})(?![\da-fA-F:]))",

@@ -21,7 +21,7 @@ public interface BanManager: IDisposable;
 
 public sealed class BanManagerImpl: BanManager {
 
-    private static readonly Logger LOGGER = LogManager.GetLogger(typeof(BanManagerImpl).FullName!);
+    private static readonly Logger LOGGER = LogManager.GetLogger(typeof(BanManagerImpl).FullName);
 
     private const FirewallProfiles ALL_PROFILES = FirewallProfiles.Domain | FirewallProfiles.Private | FirewallProfiles.Public;
     private const string           GROUP_NAME   = "Fail2Ban4Win";
