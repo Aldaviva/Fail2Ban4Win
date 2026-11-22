@@ -82,7 +82,8 @@ public sealed class BanManagerImpl: BanManager {
                                     remainingBanDuration);
                             } else {
                                 if (!configuration.isDryRun) {
-                                    LOGGER.Info("Ban already expired on subnet {subnet} while Fail2Ban4Win wasn't running, removing firewall rule {name} now", ban.Start, oldRule.Name);
+                                    LOGGER.Info("Ban already expired on subnet {subnet} at {end:G} while Fail2Ban4Win wasn't running, removing firewall rule {name} now", ban.Subnet, ban.End,
+                                        oldRule.Name);
                                     firewall.Rules.Remove(oldRule);
                                 }
 

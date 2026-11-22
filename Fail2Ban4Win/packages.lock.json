@@ -69,9 +69,9 @@
       },
       "Unfucked": {
         "type": "Direct",
-        "requested": "[0.0.1-beta.64, )",
-        "resolved": "0.0.1-beta.64",
-        "contentHash": "JlfaX5aIm/mWg+sUA9k843ZIcy5G2U7c6t9BrQpv3Y+rGu4cU/GQCiLRRk76m+0jyogENbr73jH51VDbz9lRZw==",
+        "requested": "[0.0.1-beta.65, )",
+        "resolved": "0.0.1-beta.65",
+        "contentHash": "p5V6SuLfwlGZuq9ngtdxZjIwhNO04gjpS1sXKsdShH+Zu8MJ0UOLuuTT4pXbPc7Ro81Mwz2QGIjkHY7kRcM+pw==",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "11.0.0",
           "System.Collections.Immutable": "8.0.0"
@@ -235,10 +235,6 @@
         "resolved": "4.6.2",
         "contentHash": "yQgmjfFximrNm9LIV3mL6T5MzjeC+epeE5rl4hXxAlYmxby7RM1dPSkIKXk9HNkl6G54h2JHOmLD46+Pey+IRg=="
       }
-    },
-    ".NETFramework,Version=v4.7.2/win": {},
-    ".NETFramework,Version=v4.7.2/win-arm64": {},
-    ".NETFramework,Version=v4.7.2/win-x64": {},
-    ".NETFramework,Version=v4.7.2/win-x86": {}
+    }
   }
 }
