@@ -38,7 +38,7 @@ public sealed class BanManagerImpl: BanManager {
     private readonly CancellationTokenSource                                cancellationTokenSource = new();
     private readonly ManualResetEventSlim                                   initialRuleDeletionDone = new(false);
 
-    private ICoalescingTimer unbanTimer = null!;
+    private ICoalescingTimer? unbanTimer;
 
     public BanManagerImpl(EventLogListener eventLogListener, Configuration configuration, FirewallFacade firewall, IPluginManager<IFail2Ban4WinPlugin> pluginManager) {
         this.eventLogListener = eventLogListener;
@@ -201,7 +201,7 @@ public sealed class BanManagerImpl: BanManager {
         return ban;
     }
 
-    private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => unbanTimer.enqueue(unbanDuration, () => unban(subnet));
+    private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => unbanTimer!.enqueue(unbanDuration, () => unban(subnet));
 
     /// <summary>For first offenses, this returns <c>banPeriod</c> (from <c>configuration.json</c>). For repeated offenses, the ban period is increased by <c>banRepeatedOffenseCoefficient</c> each time. The ban period stops increasing after <c>banRepeatedOffenseMax</c> offenses.</summary>
     /// <remarks>
@@ -250,8 +250,8 @@ public sealed class BanManagerImpl: BanManager {
     private static BanParams? parseBan(FirewallWASRule firewallRule) =>
         parseRuleName(firewallRule.Name) is {} subnet
         && BAN_DESCRIPTION_PATTERN.Match(firewallRule.Description) is { Success: true } match
-        && DateTimeOffset.TryParseExact(match.Groups["banned"].Value, "s", null, DateTimeStyles.AssumeLocal, out DateTimeOffset bannedTime)
-        && DateTimeOffset.TryParseExact(match.Groups["unban"].Value, "s", null, DateTimeStyles.AssumeLocal, out DateTimeOffset unbanTime)
+        && DateTimeOffset.TryParseExact(match.Groups["banned"].Value, "s", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTimeOffset bannedTime)
+        && DateTimeOffset.TryParseExact(match.Groups["unban"].Value, "s", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTimeOffset unbanTime)
         && int.TryParse(match.Groups["offense"].Value, NumberStyles.AllowThousands, null, out int offense)
             ? new BanParams(subnet, bannedTime, unbanTime - bannedTime, offense) : null;
 
@@ -269,7 +269,7 @@ public sealed class BanManagerImpl: BanManager {
     public void Dispose() {
         eventLogListener.failure -= onFailure;
         cancellationTokenSource.Cancel();
-        unbanTimer.Dispose();
+        unbanTimer?.Dispose();
         initialRuleDeletionDone.Dispose();
     }
 
