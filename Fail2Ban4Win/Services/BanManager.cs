@@ -38,6 +38,8 @@ public sealed class BanManagerImpl: BanManager {
     private readonly CancellationTokenSource                                cancellationTokenSource = new();
     private readonly ManualResetEventSlim                                   initialRuleDeletionDone = new(false);
 
+    private ICoalescingTimer unbanTimer = null!;
+
     public BanManagerImpl(EventLogListener eventLogListener, Configuration configuration, FirewallFacade firewall, IPluginManager<IFail2Ban4WinPlugin> pluginManager) {
         this.eventLogListener = eventLogListener;
         this.configuration    = configuration;
@@ -58,7 +60,8 @@ public sealed class BanManagerImpl: BanManager {
 
     private void init() {
         try {
-            IEnumerable<FirewallWASRule> oldRules = firewall.Rules.Where(isBanRule()).ToList();
+            IEnumerable<FirewallWASRule>             oldRules         = firewall.Rules.Where(isBanRule()).ToList();
+            IList<(TimeSpan delay, Action callback)> unbansToSchedule = [];
             if (oldRules.Any()) {
                 if (configuration.unbanAllOnStartup) {
                     LOGGER.Info("Deleting {count} existing rules from Windows Firewall because Fail2Ban4Win restarted. To preserve them, set {config} to false in {file}.", oldRules.Count(),
@@ -69,14 +72,12 @@ public sealed class BanManagerImpl: BanManager {
                         }
                     }
                 } else {
-                    DateTimeOffset now             = DateTimeOffset.Now;
-                    int            scheduledUnbans = 0;
+                    DateTimeOffset now = DateTimeOffset.Now;
                     foreach (FirewallWASRule oldRule in oldRules) {
                         if (parseBan(oldRule) is {} ban) {
                             TimeSpan remainingBanDuration = ban.End - now;
                             if (remainingBanDuration > TimeSpan.Zero) {
-                                scheduleUnban(ban.Subnet, remainingBanDuration);
-                                scheduledUnbans++;
+                                unbansToSchedule.Add((remainingBanDuration, () => unban(ban.Subnet)));
                                 LOGGER.Debug("Resumed timer after Fail2Ban4Win restarted to unban {subnet} at the original time of {time:O} (in {duration:g})", ban.Subnet, ban.End,
                                     remainingBanDuration);
                             } else {
@@ -95,9 +96,13 @@ public sealed class BanManagerImpl: BanManager {
                             firewall.Rules.Remove(oldRule);
                         }
                     }
-                    LOGGER.Info("Resumed {count:N0} timers to unban subnets after Fail2Ban4Win restarted", scheduledUnbans);
+                    LOGGER.Info("Resumed {count:N0} timers to unban subnets after Fail2Ban4Win restarted", unbansToSchedule.Count);
                 }
             }
+
+            unbanTimer = new CoalescingTimer(unbansToSchedule) {
+                started = true
+            };
 
             initialRuleDeletionDone.Set();
         } catch (Exception e) when (e is not OutOfMemoryException) {
@@ -196,9 +201,7 @@ public sealed class BanManagerImpl: BanManager {
         return ban;
     }
 
-    private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => Task.LongDelay(unbanDuration, cancellationTokenSource.Token)
-        .ContinueWith(_ => unban(subnet), cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled)
-        .ContinueWith(result => LOGGER.Error(result.Exception, "Exception unbanning subnet {subnet}", subnet), cancellationTokenSource.Token, TaskContinuationOptions.OnlyOnFaulted);
+    private void scheduleUnban(IPNetwork2 subnet, TimeSpan unbanDuration) => unbanTimer.enqueue(unbanDuration, () => unban(subnet));
 
     /// <summary>For first offenses, this returns <c>banPeriod</c> (from <c>configuration.json</c>). For repeated offenses, the ban period is increased by <c>banRepeatedOffenseCoefficient</c> each time. The ban period stops increasing after <c>banRepeatedOffenseMax</c> offenses.</summary>
     /// <remarks>
@@ -215,23 +218,27 @@ public sealed class BanManagerImpl: BanManager {
     }
 
     private void unban(IPNetwork2 subnet) {
-        IEnumerable<FirewallWASRule> rulesToRemove = firewall.Rules.Where(isBanRule(subnet)).ToList(); //eagerly evaluate Where clause to prevent concurrent modification below
-        IList<BanParams>             unbanned      = [];
-        foreach (FirewallWASRule rule in rulesToRemove) {
-            LOGGER.Info("Ban has expired for subnet {subnet}, removing firewall rule {name}", subnet, rule.Name);
-            if (!configuration.isDryRun) {
-                firewall.Rules.Remove(rule);
+        try {
+            IEnumerable<FirewallWASRule> rulesToRemove = firewall.Rules.Where(isBanRule(subnet)).ToList(); //eagerly evaluate Where clause to prevent concurrent modification below
+            IList<BanParams>             unbanned      = [];
+            foreach (FirewallWASRule rule in rulesToRemove) {
+                LOGGER.Info("Ban has expired for subnet {subnet}, removing firewall rule {name}", subnet, rule.Name);
+                if (!configuration.isDryRun) {
+                    firewall.Rules.Remove(rule);
+                }
+
+                if (parseBan(rule) is {} ban) {
+                    unbanned.Add(ban);
+                }
             }
 
-            if (parseBan(rule) is {} ban) {
-                unbanned.Add(ban);
+            foreach (BanParams ban in unbanned) {
+                foreach (IFail2Ban4WinPlugin plugin in pluginManager.Plugins) {
+                    plugin.OnBanLifted(ban);
+                }
             }
-        }
-
-        foreach (BanParams ban in unbanned) {
-            foreach (IFail2Ban4WinPlugin plugin in pluginManager.Plugins) {
-                plugin.OnBanLifted(ban);
-            }
+        } catch (Exception e) when (e is not OutOfMemoryException) {
+            LOGGER.Error(e, "Exception unbanning subnet {subnet}", subnet);
         }
     }
 
@@ -262,6 +269,7 @@ public sealed class BanManagerImpl: BanManager {
     public void Dispose() {
         eventLogListener.failure -= onFailure;
         cancellationTokenSource.Cancel();
+        unbanTimer.Dispose();
         initialRuleDeletionDone.Dispose();
     }
 

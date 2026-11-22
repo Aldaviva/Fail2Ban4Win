@@ -33,11 +33,11 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="IPNetwork2" Version="4.3.0" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300" PrivateAssets="All" />
+        <PackageReference Include="IPNetwork2" Version="5.0.1" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="11.0.100" PrivateAssets="All" />
     </ItemGroup>
 
-    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true' or '$(Configuration)' != 'Debug'">
+    <PropertyGroup Condition="'$(CI)' == 'true' or '$(Configuration)' != 'Debug'">
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     </PropertyGroup>
 

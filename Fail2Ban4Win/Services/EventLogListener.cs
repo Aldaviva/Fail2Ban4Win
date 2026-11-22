@@ -95,7 +95,7 @@ public sealed class EventLogListenerImpl: EventLogListener {
         }
     }
 
-    /// <summary>https://docs.microsoft.com/en-us/previous-versions/bb399427(v=vs.90)</summary>
+    /// <summary>https://docs.microsoft.com/previous-versions/bb399427(v=vs.90)</summary>
     private static string selectorToQuery(EventLogSelector selector) {
         StringBuilder queryBuilder = new($"*[System/EventID={selector.eventId}]");
 

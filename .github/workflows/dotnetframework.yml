@@ -12,14 +12,20 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
+      - name: Unfuck Git
+        run: git config set --global core.autocrlf false
+
+      - name: Standardize editorconfig
+        run: curl https://raw.githubusercontent.com/Aldaviva/.github/refs/heads/master/.editorconfig -o ../.editorconfig
+
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57
+        uses: microsoft/setup-msbuild@v3.0.0
 
       - name: Clone
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.1
 
       - name: Initialize test reporting
-        uses: testspace-com/setup-testspace@5fc620521eddeba83c1c0dd58f5a524adf474c93
+        uses: testspace-com/setup-testspace@v1.0.8
         with:
           domain: ${{github.repository_owner}}
 
@@ -42,7 +48,7 @@ jobs:
         run: testspace Tests/TestResults/TestResults.xml
 
       - name: Upload coverage
-        uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b
+        uses: coverallsapp/github-action@v2.3.6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           files: Tests/TestResults/coverage.info
@@ -52,7 +58,7 @@ jobs:
         run: exit $env:TEST_EXIT_CODE
 
       - name: Upload packed artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: ${{ env.PROJECT_NAME }}
           path: |
@@ -63,7 +69,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload unpacked artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: ${{ env.PROJECT_NAME }}-unpacked
           path: |

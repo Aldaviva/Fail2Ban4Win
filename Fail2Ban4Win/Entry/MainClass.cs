@@ -9,6 +9,8 @@ public static class MainClass {
 
     private static readonly ManualResetEventSlim UNBLOCK_MAIN_THREAD = new(false);
 
+    private static bool isBackgroundService => !Environment.UserInteractive;
+
     private static WindowsService? service;
 
     public static void Main(string[] args) {
@@ -16,6 +18,8 @@ public static class MainClass {
         if (isBackgroundService) {
             ServiceBase.Run(service);
         } else {
+            Version.PrintProgramVersionAndExitIfRequested();
+
             Console.CancelKeyPress += (_, eventArgs) => {
                 eventArgs.Cancel = true;
                 stop();
@@ -37,7 +41,5 @@ public static class MainClass {
             UNBLOCK_MAIN_THREAD.Set();
         }
     }
-
-    private static bool isBackgroundService => !Environment.UserInteractive;
 
 }
